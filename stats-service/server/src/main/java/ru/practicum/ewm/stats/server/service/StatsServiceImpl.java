@@ -9,6 +9,8 @@ import ru.practicum.ewm.stats.server.repository.StatsRepository;
 import ru.practicum.ewm.stats.server.model.EndpoinHit;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Service
@@ -16,11 +18,17 @@ import java.util.List;
 public class StatsServiceImpl implements StatsService {
     private final StatsRepository statsRepository;
     private final StatsMapper statsMapper;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Override
     @Transactional
     public List<ViewStatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
-        return null;
+
+        LocalDateTime startDateTime = LocalDateTime.parse(start, formatter);
+        LocalDateTime endDateTime = LocalDateTime.parse(end, formatter);
+        return unique
+                ? statsRepository.getStatsByUniqueIp(startDateTime, endDateTime, uris)
+                : statsRepository.getStats(startDateTime, endDateTime, uris);
     }
 
     @Override

@@ -11,13 +11,13 @@ public class TimestampHitValidator implements ConstraintValidator<TimestampHitVa
 
     @Override
     public boolean isValid(String s, ConstraintValidatorContext constraintValidatorContext) {
-        if( s == null) {
+        if (s == null) {
             return false;
         }
         try {
             LocalDateTime.parse(s, formatter);
             return true;
-        } catch(DateTimeParseException ex) {
+        } catch (DateTimeParseException ex) {
             return false;
         }
     }

@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
-import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
 
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import java.util.Map;
 
 
 @Service
-public class StatsClient extends BaseClient{
+public class StatsClient extends BaseClient {
     @Autowired
     public StatsClient(@Value("${stats-service.url}") String serverUrl, RestTemplateBuilder builder) {
         super(builder
@@ -23,6 +23,7 @@ public class StatsClient extends BaseClient{
                 .requestFactory(HttpComponentsClientHttpRequestFactory::new)
                 .build());
     }
+
     public ResponseEntity<Object> createEndpointHit(EndpointHitDto newEndpointHit) {
         return post("/hit", newEndpointHit);
     }
@@ -33,11 +34,11 @@ public class StatsClient extends BaseClient{
         path.append("/stats?start={start}&end={end}");
         parameters.put("start", start);
         parameters.put("end", end);
-        if(uris != null) {
+        if (uris != null) {
             path.append("&uris={uris}");
             parameters.put("uris", uris);
         }
-        if(unique == null) {
+        if (unique == null) {
             unique = false;
         }
         path.append("&unique={unique}");

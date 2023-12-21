@@ -1,11 +1,12 @@
 package ru.practicum.ewm.stats.client;
+
 import org.springframework.http.*;
 import org.springframework.lang.Nullable;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 public class BaseClient {
     protected final RestTemplate rest;
@@ -22,7 +23,7 @@ public class BaseClient {
         return makeAndSendRequest(HttpMethod.POST, path, null, body);
     }
 
-    private <T> ResponseEntity<Object>  makeAndSendRequest(
+    private <T> ResponseEntity<Object> makeAndSendRequest(
             HttpMethod method,
             String path,
             Map<String, Object> parameters,

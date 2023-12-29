@@ -1,5 +1,6 @@
 package ru.practicum.ewm.stats.client;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -8,14 +9,17 @@ import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
+import ru.practicum.ewm.stats.dto.ViewStatsDto;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @Service
 public class StatsClient extends BaseClient {
+
+    private final ObjectMapper mapper = new ObjectMapper();
+
     @Autowired
     public StatsClient(@Value("${stats-service.url}") String serverUrl, RestTemplateBuilder builder) {
         super(builder
@@ -28,7 +32,7 @@ public class StatsClient extends BaseClient {
         return post("/hit", newEndpointHit);
     }
 
-    public ResponseEntity<Object> getStat(String start, String end, List<String> uris, Boolean unique) {
+    public List<ViewStatsDto> getStat(String start, String end, List<String> uris, Boolean unique) {
         Map<String, Object> parameters = new HashMap<>();
         StringBuilder path = new StringBuilder();
         path.append("/stats?start={start}&end={end}");
@@ -43,7 +47,13 @@ public class StatsClient extends BaseClient {
         }
         path.append("&unique={unique}");
         parameters.put("unique", unique);
-        return get(path.toString(), parameters);
+        ResponseEntity<Object> objectResponseEntity = get(path.toString(), parameters);
+
+        Object[] objects = (Object[]) objectResponseEntity.getBody();
+        return Arrays.stream(Objects.requireNonNull(objects))
+                .map(object -> mapper.convertValue(object, ViewStatsDto.class))
+                .collect(Collectors.toList());
+        //return get(path.toString(), parameters);
     }
 
 }

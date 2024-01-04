@@ -37,7 +37,7 @@ public class PrivateEventRequestController {
         return requestsFromUserToPartInEvent;
     }
 
-    @PostMapping
+    @PatchMapping
     @ResponseStatus(HttpStatus.OK)
     public EventRequestStatusUpdateResult changingStatusRequests(
             @PathVariable @NotNull Long userId,

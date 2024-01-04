@@ -1,9 +1,9 @@
 package ru.practicum.ewm.stats.client;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
@@ -11,14 +11,14 @@ import org.springframework.web.util.DefaultUriBuilderFactory;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.dto.ViewStatsDto;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 @Service
 public class StatsClient extends BaseClient {
 
-    private final ObjectMapper mapper = new ObjectMapper();
 
     @Autowired
     public StatsClient(@Value("${stats-service.url}") String serverUrl, RestTemplateBuilder builder) {
@@ -39,8 +39,10 @@ public class StatsClient extends BaseClient {
         parameters.put("start", start);
         parameters.put("end", end);
         if (uris != null) {
-            path.append("&uris={uris}");
-            parameters.put("uris", uris);
+            for (int i = 0; i < uris.size(); i++) {
+                path.append(String.format("&uris[%s]={uris%s}", i, i));
+                parameters.put("uris" + i, uris.get(i));
+            }
         }
         if (unique == null) {
             unique = false;
@@ -48,12 +50,15 @@ public class StatsClient extends BaseClient {
         path.append("&unique={unique}");
         parameters.put("unique", unique);
         ResponseEntity<Object> objectResponseEntity = get(path.toString(), parameters);
-
-        Object[] objects = (Object[]) objectResponseEntity.getBody();
-        return Arrays.stream(Objects.requireNonNull(objects))
-                .map(object -> mapper.convertValue(object, ViewStatsDto.class))
-                .collect(Collectors.toList());
-        //return get(path.toString(), parameters);
+        HttpStatus statusCode = objectResponseEntity.getStatusCode();
+        if (statusCode == HttpStatus.OK) {
+            try {
+                return (List<ViewStatsDto>) objectResponseEntity.getBody();
+            } catch (Exception ex) {
+                throw new RuntimeException(ex.getMessage());
+            }
+        }
+        throw new RuntimeException(objectResponseEntity.getStatusCode().getReasonPhrase());
     }
 
 }

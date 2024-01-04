@@ -32,13 +32,13 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
         Root<Event> eventRoot = query.from(Event.class);
         List<Predicate> filterPredicates = new ArrayList<>();
 
-        if (parameters.users != null) {
+        if (parameters.users != null && !parameters.users.isEmpty()) {
             filterPredicates.add(eventRoot.get("initiator").in(parameters.users));
         }
-        if (parameters.states != null) {
+        if (parameters.states != null && !parameters.states.isEmpty()) {
             filterPredicates.add(eventRoot.get("state").in(parameters.states));
         }
-        if (parameters.categories != null) {
+        if (parameters.categories != null && !parameters.categories.isEmpty()) {
             filterPredicates.add(eventRoot.get("category").in(parameters.categories));
         }
         if (parameters.text != null) {
@@ -58,10 +58,14 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
             filterPredicates.add(builder.between(eventRoot.get("eventDate"), parameters.startDate, parameters.endDate));
         }
         if (parameters.onlyAvailable != null) {
-            Predicate onlyAvailablePredicate = (parameters.onlyAvailable)
-                    ? builder.isTrue(eventRoot.get("onlyAvailable"))
-                    : builder.isFalse(eventRoot.get("onlyAvailable"));
-            filterPredicates.add(onlyAvailablePredicate);
+            if (parameters.onlyAvailable) {
+                Predicate notPartLimit = builder.equal(eventRoot.get("participantLimit"), 0);
+                Predicate partLimitGtConfirmedRequests = builder.greaterThan(
+                        eventRoot.get("participantLimit"),
+                        eventRoot.get("confirmedRequests"));
+                Predicate onlyAvailablePredicate = builder.or(notPartLimit, partLimitGtConfirmedRequests);
+                filterPredicates.add(onlyAvailablePredicate);
+            }
         }
         query.where(filterPredicates.toArray(new Predicate[0]));
 

@@ -2,6 +2,8 @@ package ru.practicum.ewm.request.repository;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import ru.practicum.ewm.request.data.StatusRequest;
 import ru.practicum.ewm.request.model.Request;
 
@@ -19,6 +21,12 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
 
     List<Request> findAllByEventId(Long eventId, Sort sorting);
 
-    List<Request> findAllIdInAndEvenId(List<Long> requestIds, Long eventId);
+    @Query(value = "SELECT * FROM requests as r " +
+            "where r.id in :requestIds " +
+            "and r.event_id = :eventId",
+            nativeQuery = true)
+    List<Request> findAllByIdInAndEvenId(
+            @Param("requestIds") List<Long> requestIds,
+            @Param("eventId") Long eventId);
 
 }

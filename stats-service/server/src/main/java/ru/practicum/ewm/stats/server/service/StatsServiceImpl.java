@@ -9,6 +9,7 @@ import ru.practicum.ewm.stats.server.mapper.StatsMapper;
 import ru.practicum.ewm.stats.server.model.EndpoinHit;
 import ru.practicum.ewm.stats.server.repository.StatsRepository;
 
+import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -26,6 +27,9 @@ public class StatsServiceImpl implements StatsService {
 
         LocalDateTime startDateTime = LocalDateTime.parse(start, formatter);
         LocalDateTime endDateTime = LocalDateTime.parse(end, formatter);
+        if (!startDateTime.isBefore(endDateTime)) {
+            throw new ValidationException("start=" + start + " not before end=" + end);
+        }
         return unique
                 ? statsRepository.getStatsByUniqueIp(startDateTime, endDateTime, uris)
                 : statsRepository.getStats(startDateTime, endDateTime, uris);
@@ -35,6 +39,6 @@ public class StatsServiceImpl implements StatsService {
     @Transactional
     public void saveHit(EndpointHitDto endpointHitDto) {
         EndpoinHit endpointHit = statsMapper.toEndpoinHit(endpointHitDto);
-        statsRepository.save(endpointHit);
+        statsRepository.saveAndFlush(endpointHit);
     }
 }

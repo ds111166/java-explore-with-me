@@ -1,5 +1,6 @@
 package ru.practicum.ewm.event.mapper;
 
+import org.springframework.stereotype.Component;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.event.data.StateEvent;
@@ -14,6 +15,7 @@ import ru.practicum.ewm.user.model.User;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+@Component
 public class EventMapper {
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -39,6 +41,9 @@ public class EventMapper {
             LocalDateTime createdDate,
             LocalDateTime publishedDate,
             StateEvent state) {
+        Boolean paid = newEventDto.getPaid() != null && newEventDto.getPaid();
+        Boolean isModeration = newEventDto.getRequestModeration() == null || newEventDto.getRequestModeration();
+        Long participantLimit = (newEventDto.getParticipantLimit() == null) ? 0 : newEventDto.getParticipantLimit();
         return Event.builder()
                 .category(category)
                 .initiator(initiator)
@@ -47,13 +52,15 @@ public class EventMapper {
                 .eventDate(LocalDateTime.parse(newEventDto.getEventDate(), formatter))
                 .createdOn(createdDate)
                 .publishedOn(publishedDate)
-                .paid(newEventDto.getPaid())
-                .requestModeration(newEventDto.getRequestModeration())
-                .participantLimit(newEventDto.getParticipantLimit())
+                .paid(paid)
+                .requestModeration(isModeration)
+                .participantLimit(participantLimit)
                 .title(newEventDto.getTitle())
                 .annotation(newEventDto.getAnnotation())
                 .description(newEventDto.getDescription())
                 .state(state)
+                .views(0L)
+                .confirmedRequests(0L)
                 .build();
     }
 

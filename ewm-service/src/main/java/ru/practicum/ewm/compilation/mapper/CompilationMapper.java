@@ -12,9 +12,10 @@ import java.util.Set;
 @Component
 public class CompilationMapper {
     public Compilation toCompilation(NewCompilationDto newCompilation, Set<Event> events) {
+        Boolean pinned = newCompilation.getPinned() != null && newCompilation.getPinned();
         return Compilation.builder()
                 .title(newCompilation.getTitle())
-                .pinned(newCompilation.getPinned())
+                .pinned(pinned)
                 .events(events)
                 .build();
     }

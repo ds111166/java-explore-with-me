@@ -25,4 +25,8 @@ Template repository for ExploreWithMe project.
 * `Admin:` События API для работы с событиями
 * `Public:` События Публичный API для работы с событиями
 
+  #spring.datasource.url=jdbc:postgresql://localhost:6542/ewm
+  #spring.datasource.username=ewm
+  #spring.datasource.password=ewm
+
   

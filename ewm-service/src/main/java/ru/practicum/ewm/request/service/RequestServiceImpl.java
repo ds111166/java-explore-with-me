@@ -65,8 +65,9 @@ public class RequestServiceImpl implements RequestService {
             throw new ConflictException("Cannot add a repeat request");
         }
         //если у события достигнут лимит запросов на участие - необходимо вернуть ошибку (Ожидается код ошибки 409)
-        Long numberConfirmedRequest = requestRepository.countByEventIdAndStatus(eventId, StatusRequest.CONFIRMED);
-        Integer participantLimit = event.getParticipantLimit();
+        //Long numberConfirmedRequest = requestRepository.countByEventIdAndStatus(eventId, StatusRequest.CONFIRMED);
+        long numberConfirmedRequest = (event.getConfirmedRequests() == null) ? 0 : event.getConfirmedRequests();
+        Long participantLimit = event.getParticipantLimit();
         if (participantLimit > 0 && !(numberConfirmedRequest < participantLimit)) {
             throw new ConflictException("The event has reached the limit of participation requests");
         }
@@ -74,13 +75,22 @@ public class RequestServiceImpl implements RequestService {
             если для события отключена пре-модерация запросов на участие, то запрос должен автоматически перейти в
              состояние подтвержденного
          */
+        StatusRequest statusRequest = (!event.getRequestModeration() || participantLimit == 0L)
+                ? StatusRequest.CONFIRMED
+                : StatusRequest.PENDING;
+
         final Request request = requestMapper.toRequest(
                 event,
                 requester,
-                (event.getRequestModeration()) ? StatusRequest.PENDING : StatusRequest.CONFIRMED
+                statusRequest
         );
+
         try {
-            final Request createdRequest = requestRepository.save(request);
+            final Request createdRequest = requestRepository.saveAndFlush(request);
+            if (statusRequest == StatusRequest.CONFIRMED) {
+                event.setConfirmedRequests(numberConfirmedRequest + 1);
+                eventRepository.saveAndFlush(event);
+            }
             return requestMapper.toParticipationRequestDto(createdRequest);
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());
@@ -93,7 +103,7 @@ public class RequestServiceImpl implements RequestService {
         final Request request = requestRepository.findByIdAndRequesterId(requestId, userId)
                 .orElseThrow(() -> new NotFoundException("Request with id=" + requestId + " was not found"));
         request.setStatus(StatusRequest.CANCELED);
-        final Request canceleddRequest = requestRepository.save(request);
+        final Request canceleddRequest = requestRepository.saveAndFlush(request);
         return requestMapper.toParticipationRequestDto(canceleddRequest);
     }
 
@@ -121,14 +131,15 @@ public class RequestServiceImpl implements RequestService {
         final Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
 
-        final List<Request> requests = requestRepository.findAllIdInAndEvenId(updateRequest.getRequestIds(), eventId);
-        if (updateRequest.getRequestIds().size() != requests.size()) {
+        List<Long> requestIds = updateRequest.getRequestIds();
+        final List<Request> requests = requestRepository.findAllByIdInAndEvenId(requestIds, eventId);
+        if (requestIds.size() != requests.size()) {
             throw new ValidationException("Not all requests for a given event");
         }
         //статус можно изменить только у заявок, находящихся в состоянии ожидания (Ожидается код ошибки 409)
         for (Request request : requests) {
             if (request.getStatus() != StatusRequest.PENDING) {
-                throw new ValidationException("Request must have status PENDING");
+                throw new ConflictException("Request must have status PENDING");
             }
         }
         final String status = updateRequest.getStatus();
@@ -153,19 +164,20 @@ public class RequestServiceImpl implements RequestService {
             updateResult.getRejectedRequests().add(updatedRequestDto);
         }
         requestRepository.saveAll(requests);
+        requestRepository.flush();
         Long numberConfirmedRequest = requestRepository.countByEventIdAndStatus(
                 event.getId(),
                 StatusRequest.CONFIRMED);
         event.setConfirmedRequests(numberConfirmedRequest);
-        eventRepository.save(event);
+        eventRepository.saveAndFlush(event);
         return updateResult;
     }
 
     private EventRequestStatusUpdateResult confirmedRequestStatus(Event event, List<Request> requests) {
-        final Integer participantLimit = event.getParticipantLimit();
+        final Long participantLimit = event.getParticipantLimit();
 
         //нельзя подтвердить заявку, если уже достигнут лимит по заявкам на данное событие (Ожидается код ошибки 409)
-        Long numberConfirmedRequest = event.getConfirmedRequests();
+        Long numberConfirmedRequest = (event.getConfirmedRequests() == null) ? 0 : event.getConfirmedRequests();
         if (participantLimit > 0 && !(numberConfirmedRequest < participantLimit)) {
             throw new ConflictException("The event has reached the limit of participation requests");
         }
@@ -195,11 +207,12 @@ public class RequestServiceImpl implements RequestService {
         }
 
         requestRepository.saveAll(requests);
+        requestRepository.flush();
         numberConfirmedRequest = requestRepository.countByEventIdAndStatus(
                 event.getId(),
                 StatusRequest.CONFIRMED);
         event.setConfirmedRequests(numberConfirmedRequest);
-        eventRepository.save(event);
+        eventRepository.saveAndFlush(event);
         return updateResult;
     }
 }

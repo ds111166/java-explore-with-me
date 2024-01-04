@@ -46,6 +46,7 @@ public class AdminCategoryController {
 
     @PatchMapping("/{catId}")
     @ResponseStatus(HttpStatus.OK)
+    @Validated({Marker.OnCreate.class})
     public CategoryDto updateCategory(
             @PathVariable @NotNull Long catId,
             @Valid @RequestBody CategoryRequestDto updateCategory

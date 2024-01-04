@@ -28,14 +28,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public List<UserDto> getUsers(List<Long> ids, Integer size, Integer from) {
-        if (ids.isEmpty()) {
-            final Pageable sortedById = PageRequest.of(from / size, size, Sort.by("id").ascending());
-            return userRepository.findAll(sortedById)
+        final Pageable pageable = PageRequest.of(from / size, size, Sort.by("id").ascending());
+        if (ids == null || ids.isEmpty()) {
+            return userRepository.findAll(pageable)
                     .stream()
                     .map(userMapper::toUserDto)
                     .collect(Collectors.toList());
         }
-        return userRepository.findAllById(ids)
+        return userRepository.findAllByIdIn(ids, pageable)
                 .stream()
                 .map(userMapper::toUserDto)
                 .collect(Collectors.toList());
@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserDto createUser(NewUserRequest newUser) {
         try {
-            final User createdUser = userRepository.save(userMapper.toUser(newUser));
+            final User createdUser = userRepository.saveAndFlush(userMapper.toUser(newUser));
             return userMapper.toUserDto(createdUser);
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());

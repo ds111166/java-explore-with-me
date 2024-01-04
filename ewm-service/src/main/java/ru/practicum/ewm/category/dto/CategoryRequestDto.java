@@ -6,17 +6,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.ewm.validation.Marker;
 
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class CategoryRequestDto {
-    @NotNull(groups = Marker.OnCreate.class, message = "не должно равняться null")
-    @Max(groups = Marker.OnCreate.class, value = 50)
-    @Min(groups = Marker.OnCreate.class, value = 1)
+    @NotBlank(groups = Marker.OnCreate.class)
+    @Size(groups = Marker.OnCreate.class, min = 1, max = 50)
     private String name;    //Наименование категории
 }

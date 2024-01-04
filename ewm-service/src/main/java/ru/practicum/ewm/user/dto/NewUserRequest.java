@@ -6,21 +6,20 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.ewm.validation.Marker;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.Email;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class NewUserRequest {
-    @NotNull(groups = Marker.OnCreate.class, message = "не должно равняться null")
-    @Max(groups = Marker.OnCreate.class, value = 250)
-    @Min(groups = Marker.OnCreate.class, value = 2)
+    @NotBlank(groups = Marker.OnCreate.class)
+    @Size(groups = Marker.OnCreate.class, max = 250, min = 2)
     private String name;    // имя или логин пользователя
-    @NotNull(groups = Marker.OnCreate.class, message = "не должно равняться null")
-    @NotBlank(groups = Marker.OnCreate.class, message = "Адрес электронной почты не может быть пустой")
-    @Email(groups = Marker.OnCreate.class, message = "Адрес электронной почты не верного формата")
-    @Max(groups = Marker.OnCreate.class, value = 254)
-    @Min(groups = Marker.OnCreate.class, value = 6)
+    @Email(groups = Marker.OnCreate.class)
+    @NotBlank(groups = Marker.OnCreate.class)
+    @Size(groups = Marker.OnCreate.class, max = 254, min = 6)
     private String email;   // адрес электронной почты NewUserRequest
 }

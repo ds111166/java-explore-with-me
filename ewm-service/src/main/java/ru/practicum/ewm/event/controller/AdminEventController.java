@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.UpdateEventAdminRequest;
 import ru.practicum.ewm.event.service.EventService;
+import ru.practicum.ewm.validation.Marker;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -56,6 +57,7 @@ public class AdminEventController {
     }
 
     @PatchMapping("/{eventId}")
+    @Validated({Marker.OnUpdate.class})
     @ResponseStatus(HttpStatus.OK)
     public EventFullDto updateEvent(
             @PathVariable @NotNull Long eventId,

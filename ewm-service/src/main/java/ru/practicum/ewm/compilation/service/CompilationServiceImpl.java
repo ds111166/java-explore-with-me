@@ -2,6 +2,7 @@ package ru.practicum.ewm.compilation.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -22,6 +23,7 @@ import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.user.mapper.UserMapper;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -40,10 +42,11 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     @Transactional
     public CompilationDto createCompilation(NewCompilationDto newCompilation) {
-
-        final Set<Event> events = eventRepository.findByIdIn(newCompilation.getEvents());
+        final Set<Event> events = (newCompilation.getEvents() == null)
+                ? new HashSet<>(eventRepository.findAll())
+                : eventRepository.findByIdIn(newCompilation.getEvents());
         final Compilation compilation = compilationMapper.toCompilation(newCompilation, events);
-        final Compilation createdCompilation = compilationRepository.save(compilation);
+        final Compilation createdCompilation = compilationRepository.saveAndFlush(compilation);
         return compilationMapper.toCompilationDto(
                 createdCompilation,
                 MakeEventShortDtos(createdCompilation.getEvents())
@@ -80,7 +83,7 @@ public class CompilationServiceImpl implements CompilationService {
             updateCompilation.setTitle(updateTitle);
         }
         try {
-            final Compilation updatedCompilation = compilationRepository.save(updateCompilation);
+            final Compilation updatedCompilation = compilationRepository.saveAndFlush(updateCompilation);
             return compilationMapper.toCompilationDto(
                     updatedCompilation,
                     MakeEventShortDtos(updatedCompilation.getEvents())
@@ -96,7 +99,9 @@ public class CompilationServiceImpl implements CompilationService {
 
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        List<Compilation> compilations = compilationRepository.findByPinnedOrPinnedIsNull(pinned, pinned, pageable);
+        Page<Compilation> compilations = (pinned != null)
+                ? compilationRepository.findByPinned(pinned, pageable)
+                : compilationRepository.findAll(pageable);
         return compilations.stream()
                 .map(compilation -> compilationMapper.toCompilationDto(
                         compilation,

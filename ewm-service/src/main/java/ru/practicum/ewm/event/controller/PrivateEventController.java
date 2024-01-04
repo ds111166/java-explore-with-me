@@ -10,6 +10,7 @@ import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.service.EventService;
+import ru.practicum.ewm.validation.Marker;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Min;
@@ -41,6 +42,7 @@ public class PrivateEventController {
     }
 
     @PostMapping
+    @Validated({Marker.OnCreate.class})
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto createEvent(
             @PathVariable @NotNull Long userId,
@@ -67,6 +69,7 @@ public class PrivateEventController {
 
     @PatchMapping("/{eventId}")
     @ResponseStatus(HttpStatus.OK)
+    @Validated({Marker.OnUpdate.class})
     public EventFullDto updateEvent(
             @PathVariable @NotNull Long userId,
             @PathVariable @NotNull Long eventId,

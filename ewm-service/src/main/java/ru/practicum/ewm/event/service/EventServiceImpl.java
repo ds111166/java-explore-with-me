@@ -18,10 +18,10 @@ import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
 import ru.practicum.ewm.event.repository.EventRepositoryCustom;
 import ru.practicum.ewm.exception.ConflictException;
-import ru.practicum.ewm.exception.ForbiddenException;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.stats.client.StatsClient;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
+import ru.practicum.ewm.stats.dto.ViewStatsDto;
 import ru.practicum.ewm.user.mapper.UserMapper;
 import ru.practicum.ewm.user.model.User;
 import ru.practicum.ewm.user.repository.UserRepository;
@@ -106,19 +106,32 @@ public class EventServiceImpl implements EventService {
         LocalDateTime currentDateTime = LocalDateTime.now();
         Long differenceInHours = 1L;
         validateEventDate(event.getEventDate(), currentDateTime, differenceInHours);
+
         String stateAction = updateEvent.getStateAction();
-        if (!"PUBLISH_EVENT".equalsIgnoreCase(stateAction) && !"REJECT_EVENT".equalsIgnoreCase(stateAction)) {
-            throw new ForbiddenException("Invalid stateAction=" + stateAction);
+        if (stateAction != null) {
+            if (!"PUBLISH_EVENT".equalsIgnoreCase(stateAction) && !"REJECT_EVENT".equalsIgnoreCase(stateAction)) {
+                throw new ConflictException("Invalid stateAction=" + stateAction);
+            }
+            StateEvent stateEvent = event.getState();
+            if ("PUBLISH_EVENT".equalsIgnoreCase(stateAction) && !stateEvent.equals(StateEvent.PENDING)) {
+                throw new ConflictException("Cannot publish the event because it's not in the right state: " +
+                        stateEvent.name());
+            }
+            if ("REJECT_EVENT".equalsIgnoreCase(stateAction) && !stateEvent.equals(StateEvent.PENDING)) {
+                throw new ConflictException("Cannot reject the event because it's not in the right state: " +
+                        stateEvent.name());
+            }
+
+            if ("PUBLISH_EVENT".equalsIgnoreCase(stateAction)) {
+                event.setState(StateEvent.PUBLISHED);
+                event.setPublishedOn(LocalDateTime.now());
+
+            } else if ("REJECT_EVENT".equalsIgnoreCase(stateAction)) {
+                event.setState(StateEvent.CANCELED);
+                event.setPublishedOn(null);
+            }
         }
-        StateEvent stateEvent = event.getState();
-        if ("PUBLISH_EVENT".equalsIgnoreCase(stateAction) && !stateEvent.equals(StateEvent.PENDING)) {
-            throw new ForbiddenException("Cannot publish the event because it's not in the right state: " +
-                    stateEvent.name());
-        }
-        if ("REJECT_EVENT".equalsIgnoreCase(stateAction) && !stateEvent.equals(StateEvent.PENDING)) {
-            throw new ForbiddenException("Cannot reject the event because it's not in the right state: " +
-                    stateEvent.name());
-        }
+
         String annotation = updateEvent.getAnnotation();
         if (annotation != null) {
             event.setAnnotation(annotation);
@@ -146,7 +159,7 @@ public class EventServiceImpl implements EventService {
         if (paid != null) {
             event.setPaid(paid);
         }
-        Integer participantLimit = updateEvent.getParticipantLimit();
+        Long participantLimit = updateEvent.getParticipantLimit();
         if (participantLimit != null) {
             event.setParticipantLimit(participantLimit);
         }
@@ -154,11 +167,12 @@ public class EventServiceImpl implements EventService {
         if (requestModeration != null) {
             event.setRequestModeration(requestModeration);
         }
-        String title = updateEvent.getTitle();
+        final String title = updateEvent.getTitle();
         if (title != null) {
             event.setTitle(title);
         }
-        Event savedEvent = eventRepository.save(event);
+
+        final Event savedEvent = eventRepository.save(event);
 
         return eventMapper.toEventFullDto(
                 savedEvent,
@@ -173,7 +187,7 @@ public class EventServiceImpl implements EventService {
                                                Boolean paid, String rangeStart, String rangeEnd,
                                                Boolean onlyAvailable, String sort, Integer size, Integer from) {
 
-        FindEventsParametrs parametrs = FindEventsParametrs.builder()
+        final FindEventsParametrs parametrs = FindEventsParametrs.builder()
                 .states(List.of(StateEvent.PUBLISHED))
                 .categories(categories)
                 .text(text)
@@ -183,12 +197,21 @@ public class EventServiceImpl implements EventService {
         //если в запросе не указан диапазон дат [rangeStart-rangeEnd],
         // то нужно выгружать события, которые произойдут позже текущей даты и времени
         if (rangeStart != null && rangeEnd != null) {
-            parametrs.startDate = LocalDateTime.parse(rangeStart, formatter);
-            parametrs.endDate = LocalDateTime.parse(rangeEnd, formatter);
-        } else {
+            LocalDateTime dateTimeStart = LocalDateTime.parse(rangeStart, formatter);
+            LocalDateTime dateTimeEnd = LocalDateTime.parse(rangeEnd, formatter);
+            if (!dateTimeStart.isBefore(dateTimeEnd)) {
+                throw new ValidationException(
+                        "Invalid dates: rangeStart="
+                                + dateTimeStart.format(formatter) +
+                                " after rangeEnd="
+                                + dateTimeEnd.format(formatter));
+            }
+            parametrs.startDate = dateTimeStart;
+            parametrs.endDate = dateTimeEnd;
+        }/* else {
             parametrs.startDate = LocalDateTime.now();
             parametrs.endDate = LocalDateTime.MAX;
-        }
+        }*/
         final Sort sorting;
         if ("EVENT_DATE".equalsIgnoreCase(sort)) {
             sorting = Sort.by(Sort.Order.desc("eventDate"));
@@ -198,7 +221,15 @@ public class EventServiceImpl implements EventService {
             sorting = Sort.by(Sort.Order.desc("createdOn"));
         }
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
+        final FindEventsParametrs parametrsAllStates = FindEventsParametrs.builder()
+                .states(null)
+                .categories(parametrs.categories)
+                .text(parametrs.text)
+                .paid(parametrs.paid)
+                .onlyAvailable(parametrs.onlyAvailable)
+                .build();
         final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parametrs, pageable);
+        final Page<Event> eventsAllStates = eventRepositoryCustom.findEventsByParameters(parametrsAllStates, pageable);
         createHitsEventEndpoint(request);
         return events.stream()
                 .map(event -> eventMapper.toEventShortDto(
@@ -214,16 +245,16 @@ public class EventServiceImpl implements EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         if (event.getState() != StateEvent.PUBLISHED) {
-            throw new ForbiddenException("Event with id=" + eventId + " was not published");
+            throw new NotFoundException("Event with id=" + eventId + " was not published");
         }
-        long views = (event.getViews() == null) ? 0 : event.getViews();
-        EventFullDto eventFullDto = eventMapper.toEventFullDto(
+        final EventFullDto eventFullDto = eventMapper.toEventFullDto(
                 event,
                 categoryMapper.toCategoryDto(event.getCategory()),
                 userMapper.toUserShorDto(event.getInitiator())
         );
         createHitsEventEndpoint(request);
-        event.setViews(views + 1);
+        long views = getNumberOfHits(event.getCreatedOn(), LocalDateTime.now(), request);
+        event.setViews(views);
         eventRepository.save(event);
         return eventFullDto;
     }
@@ -232,7 +263,7 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public List<EventShortDto> getEventsOfUser(Long userId, Integer size, Integer from) {
-        FindEventsParametrs parametrs = FindEventsParametrs.builder()
+        final FindEventsParametrs parametrs = FindEventsParametrs.builder()
                 .users(List.of(userId))
                 .build();
         final Sort sorting = Sort.by(Sort.Order.desc("createdOn"));
@@ -265,52 +296,59 @@ public class EventServiceImpl implements EventService {
         final Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         if (event.getState() == StateEvent.PUBLISHED) {
-            throw new ValidationException("Event must not be published");
+            throw new ConflictException("Event must not be published");
         }
         LocalDateTime currentDateTime = LocalDateTime.now();
         Long differenceInHours = 2L;
         validateEventDate(event.getEventDate(), currentDateTime, differenceInHours);
 
-        String annotation = updateEvent.getAnnotation();
+        String stateAction = updateEvent.getStateAction();
+        if ("SEND_TO_REVIEW".equalsIgnoreCase(stateAction)) {
+            event.setState(StateEvent.PENDING);
+        } else if ("CANCEL_REVIEW".equalsIgnoreCase(stateAction)) {
+            event.setState(StateEvent.CANCELED);
+        }
+
+        final String annotation = updateEvent.getAnnotation();
         if (annotation != null) {
             event.setAnnotation(annotation);
         }
-        Long categoryId = updateEvent.getCategory();
+        final Long categoryId = updateEvent.getCategory();
         if (categoryId != null) {
             Category category = categoryRepository.findById(categoryId)
                     .orElseThrow(() -> new NotFoundException("Category with id=" + categoryId + " was not found"));
             event.setCategory(category);
         }
-        String description = updateEvent.getDescription();
+        final String description = updateEvent.getDescription();
         if (description != null) {
             event.setDescription(description);
         }
-        String eventDate = updateEvent.getEventDate();
+        final String eventDate = updateEvent.getEventDate();
         if (eventDate != null) {
             event.setEventDate(LocalDateTime.parse(eventDate, formatter));
         }
-        Location location = updateEvent.getLocation();
+        final Location location = updateEvent.getLocation();
         if (location != null) {
             event.setLat(location.getLat());
             event.setLon(location.getLon());
         }
-        Boolean paid = updateEvent.getPaid();
+        final Boolean paid = updateEvent.getPaid();
         if (paid != null) {
             event.setPaid(paid);
         }
-        Integer participantLimit = updateEvent.getParticipantLimit();
+        final Long participantLimit = updateEvent.getParticipantLimit();
         if (participantLimit != null) {
             event.setParticipantLimit(participantLimit);
         }
-        Boolean requestModeration = updateEvent.getRequestModeration();
+        final Boolean requestModeration = updateEvent.getRequestModeration();
         if (requestModeration != null) {
             event.setRequestModeration(requestModeration);
         }
-        String title = updateEvent.getTitle();
+        final String title = updateEvent.getTitle();
         if (title != null) {
             event.setTitle(title);
         }
-        Event savedEvent = eventRepository.save(event);
+        final Event savedEvent = eventRepository.save(event);
 
         return eventMapper.toEventFullDto(
                 savedEvent,
@@ -321,17 +359,28 @@ public class EventServiceImpl implements EventService {
 
     private void validateEventDate(LocalDateTime eventDate, LocalDateTime now, Long differenceInHours) {
         if (eventDate.isBefore(now.plusHours(differenceInHours))) {
-            throw new ForbiddenException("Field: eventDate. Error: должно содержать дату, " +
+            throw new ValidationException("Field: eventDate. Error: должно содержать дату, " +
                     "которая еще не наступила. Value: " + eventDate.format(formatter));
         }
     }
 
     private void createHitsEventEndpoint(HttpServletRequest request) {
-        EndpointHitDto hitEvent = EndpointHitDto.builder()
+        final EndpointHitDto hitEvent = EndpointHitDto.builder()
                 .ip(request.getRemoteAddr())
                 .app("ewm-service")
                 .uri(request.getRequestURI())
+                .timestamp(LocalDateTime.now().format(formatter))
                 .build();
         statsClient.createEndpointHit(hitEvent);
+    }
+
+    private long getNumberOfHits(LocalDateTime startDate, LocalDateTime endDate, HttpServletRequest request) {
+        Boolean unique = true;
+        List<ViewStatsDto> results = statsClient.getStat(
+                startDate.format(formatter),
+                endDate.format(formatter),
+                List.of(request.getRequestURI()),
+                unique);
+        return (results == null) ? 0 : results.size();
     }
 }

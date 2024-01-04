@@ -6,8 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.practicum.ewm.validation.Marker;
 
-import javax.validation.constraints.Max;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.Set;
 
 @Data
@@ -18,6 +18,6 @@ public class NewCompilationDto {
     private Set<Long> events;
     private Boolean pinned;
     @NotBlank
-    @Max(groups = Marker.OnCreate.class, value = 50)
+    @Size(groups = Marker.OnCreate.class, min = 1, max = 50)
     private String title;
 }

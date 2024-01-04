@@ -17,6 +17,7 @@ import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -32,7 +33,8 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto createCategory(CategoryRequestDto newCategory) {
         try {
-            final Category createdCategory = categoryRepository.save(categoryMapper.toCategory(newCategory));
+            Category category = categoryMapper.toCategory(newCategory);
+            final Category createdCategory = categoryRepository.saveAndFlush(category);
             return categoryMapper.toCategoryDto(createdCategory);
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());
@@ -54,15 +56,17 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
-    public CategoryDto updateCategory(Long catId, CategoryRequestDto updateCategory) {
-        Category category = categoryRepository.findById(catId)
+    public CategoryDto updateCategory(Long catId, CategoryRequestDto updateCategoryDto) {
+        Category updateCategory = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found"));
-        final String categoryName = updateCategory.getName();
-        if (categoryName != null) {
-            category.setName(categoryName);
+        final String newCategoryName = updateCategoryDto.getName();
+        String categoryName = updateCategory.getName();
+        if (newCategoryName != null && !Objects.equals(categoryName, newCategoryName)) {
+            checkingCategoryName(newCategoryName);
+            updateCategory.setName(newCategoryName);
         }
         try {
-            Category updatedCategory = categoryRepository.save(category);
+            Category updatedCategory = categoryRepository.saveAndFlush(updateCategory);
             return categoryMapper.toCategoryDto(updatedCategory);
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());
@@ -84,5 +88,11 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(catId)
                 .orElseThrow(() -> new NotFoundException("Category with id=" + catId + " was not found"));
         return categoryMapper.toCategoryDto(category);
+    }
+
+    private void checkingCategoryName(String categoryName) {
+        if (categoryRepository.existsCategoryByName(categoryName)) {
+            throw new ConflictException("Категоия с name='" + categoryName + "' уже существует");
+        }
     }
 }

@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.Max;
+import javax.validation.constraints.Size;
 import java.util.Set;
 
 @Data
@@ -15,6 +15,6 @@ import java.util.Set;
 public class UpdateCompilationDto {
     private Set<Long> events;
     private Boolean pinned;
-    @Max(value = 50)
+    @Size(min = 1, max = 50)
     private String title;
 }

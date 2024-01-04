@@ -42,13 +42,14 @@ public class Event {
     @Column(name = "is_moderation", nullable = false)
     private Boolean requestModeration;      // Нужна ли пре-модерация заявок на участие
     @Column(name = "participant_limit", nullable = false)
-    private Integer participantLimit;       // ограничение на кол-во участников
+    private Long participantLimit;       // ограничение на кол-во участников. 0 - означает отсутствие ограничения
     @Column(name = "title", nullable = false, length = 120)
     private String title;                   // Заголовок
     @Column(name = "annotation", nullable = false, length = 2000)
     private String annotation;              // Краткое описание
     @Column(name = "description", nullable = false, length = 7000)
     private String description;             // Полное описание события
+    @Column(name = "state_id")
     @Enumerated(EnumType.ORDINAL)
     private StateEvent state;               // Список состояний жизненного цикла события
     @Column(name = "confirmed_requests")

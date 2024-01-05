@@ -49,7 +49,7 @@ public class CompilationServiceImpl implements CompilationService {
         final Compilation createdCompilation = compilationRepository.saveAndFlush(compilation);
         return compilationMapper.toCompilationDto(
                 createdCompilation,
-                MakeEventShortDtos(createdCompilation.getEvents())
+                makeEventShortDtos(createdCompilation.getEvents())
         );
     }
 
@@ -86,7 +86,7 @@ public class CompilationServiceImpl implements CompilationService {
             final Compilation updatedCompilation = compilationRepository.saveAndFlush(updateCompilation);
             return compilationMapper.toCompilationDto(
                     updatedCompilation,
-                    MakeEventShortDtos(updatedCompilation.getEvents())
+                    makeEventShortDtos(updatedCompilation.getEvents())
             );
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());
@@ -105,7 +105,7 @@ public class CompilationServiceImpl implements CompilationService {
         return compilations.stream()
                 .map(compilation -> compilationMapper.toCompilationDto(
                         compilation,
-                        MakeEventShortDtos(compilation.getEvents())
+                        makeEventShortDtos(compilation.getEvents())
                 ))
                 .collect(Collectors.toList());
     }
@@ -116,10 +116,10 @@ public class CompilationServiceImpl implements CompilationService {
 
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
-        return compilationMapper.toCompilationDto(compilation, MakeEventShortDtos(compilation.getEvents()));
+        return compilationMapper.toCompilationDto(compilation, makeEventShortDtos(compilation.getEvents()));
     }
 
-    private Set<EventShortDto> MakeEventShortDtos(Set<Event> events) {
+    private Set<EventShortDto> makeEventShortDtos(Set<Event> events) {
 
         return events.stream()
                 .map(event -> eventMapper.toEventShortDto(

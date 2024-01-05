@@ -108,29 +108,24 @@ public class EventServiceImpl implements EventService {
         validateEventDate(event.getEventDate(), currentDateTime, differenceInHours);
 
         String stateAction = updateEvent.getStateAction();
-        if (stateAction != null) {
-            if (!"PUBLISH_EVENT".equalsIgnoreCase(stateAction) && !"REJECT_EVENT".equalsIgnoreCase(stateAction)) {
-                throw new ConflictException("Invalid stateAction=" + stateAction);
-            }
-            StateEvent stateEvent = event.getState();
-            if ("PUBLISH_EVENT".equalsIgnoreCase(stateAction) && !stateEvent.equals(StateEvent.PENDING)) {
-                throw new ConflictException("Cannot publish the event because it's not in the right state: " +
-                        stateEvent.name());
-            }
-            if ("REJECT_EVENT".equalsIgnoreCase(stateAction) && !stateEvent.equals(StateEvent.PENDING)) {
-                throw new ConflictException("Cannot reject the event because it's not in the right state: " +
-                        stateEvent.name());
-            }
+        StateEvent stateEvent = event.getState();
 
+        if (stateAction != null) {
+            if (!StateEvent.PENDING.equals(stateEvent)) {
+                throw new ConflictException("The event is in the wrong state: " +
+                        stateEvent);
+            }
             if ("PUBLISH_EVENT".equalsIgnoreCase(stateAction)) {
                 event.setState(StateEvent.PUBLISHED);
                 event.setPublishedOn(LocalDateTime.now());
-
             } else if ("REJECT_EVENT".equalsIgnoreCase(stateAction)) {
                 event.setState(StateEvent.CANCELED);
                 event.setPublishedOn(null);
+            } else {
+                throw new ConflictException("Invalid stateAction=" + stateAction);
             }
         }
+
 
         String annotation = updateEvent.getAnnotation();
         if (annotation != null) {
@@ -199,19 +194,17 @@ public class EventServiceImpl implements EventService {
         if (rangeStart != null && rangeEnd != null) {
             LocalDateTime dateTimeStart = LocalDateTime.parse(rangeStart, formatter);
             LocalDateTime dateTimeEnd = LocalDateTime.parse(rangeEnd, formatter);
-            if (!dateTimeStart.isBefore(dateTimeEnd)) {
+            if (dateTimeEnd.isBefore(dateTimeStart)) {
                 throw new ValidationException(
-                        "Invalid dates: rangeStart="
-                                + dateTimeStart.format(formatter) +
-                                " after rangeEnd="
-                                + dateTimeEnd.format(formatter));
+                        "Invalid dates: rangeEnd="
+                                + dateTimeEnd.format(formatter) +
+                                " before rangeStart="
+                                + dateTimeStart.format(formatter));
             }
             parametrs.startDate = dateTimeStart;
             parametrs.endDate = dateTimeEnd;
-        }/* else {
-            parametrs.startDate = LocalDateTime.now();
-            parametrs.endDate = LocalDateTime.MAX;
-        }*/
+        }
+
         final Sort sorting;
         if ("EVENT_DATE".equalsIgnoreCase(sort)) {
             sorting = Sort.by(Sort.Order.desc("eventDate"));

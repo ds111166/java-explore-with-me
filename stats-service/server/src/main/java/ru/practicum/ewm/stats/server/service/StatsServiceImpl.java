@@ -27,8 +27,8 @@ public class StatsServiceImpl implements StatsService {
 
         LocalDateTime startDateTime = LocalDateTime.parse(start, formatter);
         LocalDateTime endDateTime = LocalDateTime.parse(end, formatter);
-        if (!startDateTime.isBefore(endDateTime)) {
-            throw new ValidationException("start=" + start + " not before end=" + end);
+        if (endDateTime.isBefore(startDateTime)) {
+            throw new ValidationException("endDate=" + end + " before startDate=" + start);
         }
         return unique
                 ? statsRepository.getStatsByUniqueIp(startDateTime, endDateTime, uris)

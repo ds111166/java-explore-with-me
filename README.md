@@ -8,7 +8,6 @@ Template repository for ExploreWithMe project.
 3. ✓✓✓  - таблица, код, отлажено
 
 * ✓✓ `Admin:` Пользователи - API для работы с пользователями
-  `GET /admin/users`, `POST /admin/users`, `DELETE /admin/users/{userId}`
 * ***********************************************
 * ✓✓`Admin:` Подборки событий - API для работы с подборками событий. 
 * ✓✓`Public:` Подборки событий Публичный API для работы с подборками событий 
@@ -20,13 +19,10 @@ Template repository for ExploreWithMe project.
 * ✓✓ `Private:` Получение информации об участии в событиях тек пользователя
 * ✓✓ `Private:` Изменение статуса заявок на участие в событиях текущщего пользователя
 * ***********************************************
-* `Private:` События Закрытый API для работы с событиями
-* * event.getPublishedOn()
-* `Admin:` События API для работы с событиями
-* `Public:` События Публичный API для работы с событиями
+* ✓✓ `Private:` События Закрытый API для работы с событиями
+* ✓✓ `Admin:` События API для работы с событиями
+* ✓✓ `Public:` События Публичный API для работы с событиями
 
-  #spring.datasource.url=jdbc:postgresql://localhost:6542/ewm
-  #spring.datasource.username=ewm
-  #spring.datasource.password=ewm
+  
 
   

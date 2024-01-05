@@ -17,10 +17,7 @@ public class UpdateEventTimeStampValidator implements ConstraintValidator<Update
         }
         try {
             LocalDateTime dateTime = LocalDateTime.parse(s, formatter);
-            if (!LocalDateTime.now().isBefore(dateTime)) {
-                return false;
-            }
-            return true;
+            return LocalDateTime.now().isBefore(dateTime);
         } catch (DateTimeParseException ex) {
             return false;
         }

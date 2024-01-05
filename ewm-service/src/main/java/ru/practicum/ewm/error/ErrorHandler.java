@@ -108,7 +108,7 @@ public class ErrorHandler {
         final ErrorResponse errorResponse = ErrorResponse.builder()
                 .status(HttpStatus.INTERNAL_SERVER_ERROR.toString())
                 .reason(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
-                .message(exception.getMessage())
+                .message(exception.getMessage() + "[" + exception.getClass() + "]")
                 .timestamp(LocalDateTime.now().format(formatter))
                 .build();
         log.error("{}: {}", errorResponse.getStatus(), errorResponse.getMessage());

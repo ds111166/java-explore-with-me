@@ -14,14 +14,14 @@ import javax.validation.constraints.NotNull;
 @AllArgsConstructor
 @NoArgsConstructor
 public class EndpointHitDto {
-    @NotNull
     @NotBlank
+    @NotNull
     private String app;
-    @NotNull
     @NotBlank
+    @NotNull
     private String uri;
-    @NotNull
     @NotBlank
+    @NotNull
     private String ip;
     @TimestampHitValidate
     private String timestamp;

@@ -60,4 +60,3 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db/ewm
       - POSTGRES_DB=ewm
       - POSTGRES_USER=ewm
-

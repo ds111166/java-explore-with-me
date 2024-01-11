@@ -37,21 +37,9 @@ public class AdminEventController {
     ) {
         log.info("Получение событий: users={}, states={}, categories={}," +
                         " rangeStart={}, rangeEnd={}. size={}, from={}",
-                users,
-                states,
-                categories,
-                rangeStart,
-                rangeEnd,
-                size,
-                from);
-        final List<EventFullDto> events = eventService.getEvents(
-                users,
-                states,
-                categories,
-                rangeStart,
-                rangeEnd,
-                size,
-                from);
+                users, states, categories, rangeStart, rangeEnd, size, from);
+        final List<EventFullDto> events = eventService.getEvents(users, states,
+                categories, rangeStart, rangeEnd, size, from);
         log.info("Return events = \"{}\"", events);
         return events;
     }

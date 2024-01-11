@@ -48,26 +48,9 @@ public class PublicEventController {
     ) {
         log.info("Получение публичных событий: text={}, categories={}, paid={}, rangeStart={}, rangeEnd={}, " +
                         "onlyAvailable={}, sort={}, size={}, from={}",
-                text,
-                categories,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable,
-                sort,
-                size,
-                from);
-        List<EventShortDto> publicEvents = eventService.getPublicEvents(
-                request,
-                text,
-                categories,
-                paid,
-                rangeStart,
-                rangeEnd,
-                onlyAvailable,
-                sort,
-                size,
-                from);
+                text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, size, from);
+        List<EventShortDto> publicEvents = eventService.getPublicEvents(request, text,
+                categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, size, from);
         log.info("Return public events = \"{}\"", publicEvents);
         return publicEvents;
     }

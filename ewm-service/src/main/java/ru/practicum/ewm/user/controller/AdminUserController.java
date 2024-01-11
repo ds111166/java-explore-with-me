@@ -11,6 +11,7 @@ import ru.practicum.ewm.user.service.UserService;
 import ru.practicum.ewm.validation.Marker;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
@@ -26,8 +27,8 @@ public class AdminUserController {
     @ResponseStatus(HttpStatus.OK)
     public List<UserDto> getUsers(
             @RequestParam(required = false) List<Long> ids,
-            @RequestParam(defaultValue = "10", required = false) Integer size,
-            @RequestParam(defaultValue = "0", required = false) Integer from
+            @Min(value = 1) @RequestParam(defaultValue = "10", required = false) Integer size,
+            @Min(value = 0) @RequestParam(defaultValue = "0", required = false) Integer from
     ) {
         log.info("Получение инф. о пользователях: ids={}, size={}, from={}", ids, size, from);
         final List<UserDto> users = userService.getUsers(ids, size, from);

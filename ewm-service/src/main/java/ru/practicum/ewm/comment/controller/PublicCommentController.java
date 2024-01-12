@@ -26,13 +26,13 @@ public class PublicCommentController {
     @ResponseStatus(HttpStatus.OK)
     public List<CommentResponseDto> getPublishedEventComments(
             @PathVariable @NotNull Long eventId,
-            @RequestParam(defaultValue = "asc", required = false) String sort,
+            //@RequestParam(defaultValue = "asc", required = false) String sort, //в порядке возрастания id
             @Min(value = 1) @RequestParam(defaultValue = "10", required = false) Integer size,
             @Min(value = 0) @RequestParam(defaultValue = "0", required = false) Integer from
     ) {
-        log.info("Получение публичных комментариев события: eventId={}, , sort={}, size={}, from={}",
-                eventId, sort, size, from);
-        final List<CommentResponseDto> comments = commentService.getPublishedEventComments(eventId, sort, size, from);
+        log.info("Получение публичных комментариев события: eventId={}, size={}, from={}",
+                eventId, size, from);
+        final List<CommentResponseDto> comments = commentService.getPublishedEventComments(eventId, size, from);
         log.info("Return comments ids = `{}`", comments.stream()
                 .map(CommentResponseDto::getId).collect(Collectors.toList()));
         return comments;

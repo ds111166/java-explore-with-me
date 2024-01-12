@@ -6,11 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.comment.dto.CommentResponseDto;
-import ru.practicum.ewm.comment.dto.UpdateCommentAdminRequest;
 import ru.practicum.ewm.comment.service.CommentService;
 import ru.practicum.ewm.validation.Marker;
 
-import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -28,18 +26,18 @@ public class AdminCommentController {
     @ResponseStatus(HttpStatus.OK)
     public List<CommentResponseDto> getAdminComments(
             @RequestParam(required = false) List<Long> users,
+            @RequestParam(required = false) List<Long> events,
             @RequestParam(required = false) List<String> states,
             @RequestParam(required = false) String rangeStart,
             @RequestParam(required = false) String rangeEnd,
-            @RequestParam(required = false) String sort,
             @Min(value = 1) @RequestParam(defaultValue = "10", required = false) Integer size,
             @Min(value = 0) @RequestParam(defaultValue = "0", required = false) Integer from
     ) {
-        log.info("Получение комментариев админом: users={}, states={}, rangeStart={}, rangeEnd={}," +
-                        " sort={}, size={}, from={}",
-                users, states, rangeStart, rangeEnd, sort, size, from);
-        final List<CommentResponseDto> comments = commentService.getAdminComments(users, states,
-                rangeStart, rangeEnd, sort, size, from);
+        log.info("Получение комментариев админом: users={}, events={}, states={}, rangeStart={}, rangeEnd={}," +
+                        " size={}, from={}",
+                users, events, states, rangeStart, rangeEnd, size, from);
+        final List<CommentResponseDto> comments = commentService.getAdminComments(users, events, states,
+                rangeStart, rangeEnd, size, from);
         log.info("Return comments = \"{}\"", comments);
         return comments;
     }
@@ -47,15 +45,15 @@ public class AdminCommentController {
     @PatchMapping("/{commentId}")
     @Validated({Marker.OnUpdate.class})
     @ResponseStatus(HttpStatus.OK)
-    public CommentResponseDto updateAdminComment(
+    public CommentResponseDto commentProcessingAdmin(
             @PathVariable @NotNull Long commentId,
-            @Valid @RequestBody @NotNull UpdateCommentAdminRequest updateCommentAdminRequest
+            @RequestParam(value = "action", defaultValue = "PUBLISHED", required = false) String action
     ) {
-        log.info("Обновление комментария админом: commentId={}, updateCommentAdminRequest={}",
-                commentId, updateCommentAdminRequest);
-        CommentResponseDto updatedComment = commentService.updateAdminComment(commentId, updateCommentAdminRequest);
-        log.info("Обновлен комментарий: \"{}\"", updatedComment);
-        return updatedComment;
+        log.info("Обработка комментария админом: commentId={}, action={}",
+                commentId, action);
+        CommentResponseDto processedComment = commentService.commentProcessingAdmin(commentId, action);
+        log.info("Обработан комментарий: \"{}\"", processedComment);
+        return processedComment;
     }
 
     @DeleteMapping

@@ -30,9 +30,11 @@ public class PrivateCommentController {
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDto createUsersComment(
             @PathVariable @NotNull Long userId,
+            @RequestParam @NotNull Long eventId,
             @Valid @RequestBody NewCommentRequest newComment) {
-        log.info("Добавление нового комментария: userId={}, newComment=\"{}\"", userId, newComment);
-        final CommentResponseDto comment = commentService.createComment(userId, newComment);
+        log.info("Добавление нового комментария: userId={}, eventId={}, newComment=\"{}\"",
+                userId, eventId, newComment);
+        final CommentResponseDto comment = commentService.createComment(userId, eventId, newComment);
         log.info("Добавлен новый комментарий: \"{}\"", comment);
         return comment;
     }
@@ -43,7 +45,7 @@ public class PrivateCommentController {
             @PathVariable @NotNull Long userId,
             @PathVariable @NotNull Long commentId) {
         log.info("Удаление комментария: userId={}, commentId={}", userId, commentId);
-        commentService.deleteComment(commentId);
+        commentService.deleteComment(userId, commentId);
         log.info("Удален комментарий: commentId={}", commentId);
     }
 
@@ -51,18 +53,18 @@ public class PrivateCommentController {
     @ResponseStatus(HttpStatus.OK)
     public List<CommentResponseDto> getUsersComments(
             @PathVariable @NotNull Long userId,
+            @RequestParam(required = false) List<Long> events,
             @RequestParam(required = false) List<String> states,
             @RequestParam(required = false) String rangeStart,
             @RequestParam(required = false) String rangeEnd,
-            @RequestParam(required = false) String sort,
             @Min(value = 1) @RequestParam(defaultValue = "10", required = false) Integer size,
             @Min(value = 0) @RequestParam(defaultValue = "0", required = false) Integer from
     ) {
-        log.info("Получение инф. о комментариях пользователя: userId={}, states={}, rangeStart={}, rangeEnd={}," +
-                        " sort={}, size={}, from={}",
-                userId, states, rangeStart, rangeEnd, sort, size, from);
+        log.info("Получение инф. о комментариях пользователя: userId={}, events={}, " +
+                        "states={}, rangeStart={}, rangeEnd={}, size={}, from={}",
+                userId, events, states, rangeStart, rangeEnd, size, from);
         final List<CommentResponseDto> comments = commentService
-                .getUsersComments(userId, states, rangeStart, rangeEnd, sort, size, from);
+                .getUsersComments(userId, events, states, rangeStart, rangeEnd, size, from);
         log.info("Return comments = \"{}\"", comments);
         return comments;
     }

@@ -29,8 +29,8 @@ public class Comment {
     private User author;                // Автор
     @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;    //Дата и время создания комментария (формат "yyyy-MM-dd HH:mm:ss")
-    @Column(name = "published_on")
-    private LocalDateTime publishedOn;  //Дата и время публикации комментария (формат "yyyy-MM-dd HH:mm:ss") или NULL
+    @Column(name = "edited_on")
+    private LocalDateTime editedOn;  //Дата и время последненго редактирования комментария или NULL
     @Column(name = "text", nullable = false, length = 2048)
     private String text;                //Текст комментария
     @Column(name = "state_id")

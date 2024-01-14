@@ -6,7 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.comment.data.StateComment;
 import ru.practicum.ewm.comment.dto.CommentResponseDto;
 import ru.practicum.ewm.comment.dto.NewCommentRequest;
@@ -14,10 +13,9 @@ import ru.practicum.ewm.comment.dto.UpdateCommentUserRequest;
 import ru.practicum.ewm.comment.mapper.CommentMapper;
 import ru.practicum.ewm.comment.model.Comment;
 import ru.practicum.ewm.comment.repository.CommentRepository;
-import ru.practicum.ewm.event.mapper.EventMapper;
+import ru.practicum.ewm.event.data.StateEvent;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
-import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.user.mapper.UserMapper;
 import ru.practicum.ewm.user.model.User;
@@ -26,7 +24,6 @@ import ru.practicum.ewm.user.repository.UserRepository;
 import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,8 +38,6 @@ public class CommentServiceImpl implements CommentService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final EventRepository eventRepository;
-    private final EventMapper eventMapper;
-    private final CategoryMapper categoryMapper;
 
     @Override
     @Transactional
@@ -72,11 +67,17 @@ public class CommentServiceImpl implements CommentService {
                 throw new ValidationException("invalid rangeEnd=" + rangeEnd + "ex: " + ex.getMessage());
             }
         }
+        if (endDate != null && startDate != null && endDate.isBefore(startDate)) {
+            throw new ValidationException(
+                    "Invalid dates: rangeEnd="
+                            + endDate.format(formatter) +
+                            " before rangeStart="
+                            + startDate.format(formatter));
+        }
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
         final List<Comment> comments = commentRepository
                 .findCommentsByParameters(userIds, eventIds, states, startDate, endDate, pageable);
-
         return comments.stream()
                 .map(comment -> commentMapper.toCommentResponseDto(
                         comment,
@@ -116,7 +117,6 @@ public class CommentServiceImpl implements CommentService {
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
         final List<Comment> comments = commentRepository
                 .findCommentsByParameters(null, eventIds, states, null, null, pageable);
-
         return comments.stream()
                 .map(comment -> commentMapper.toCommentResponseDto(
                         comment,
@@ -137,21 +137,28 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
         final Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+        StateEvent stateEvent = event.getState();
+        if (!StateEvent.PUBLISHED.equals(stateEvent)) {
+            throw new ValidationException("Invalid stateEvent=" + stateEvent);
+        }
+        checkingForSpam(userId, eventId);
         Comment comment = commentMapper.toComment(newCommentDto, author, event);
         final Comment newComment = commentRepository.save(comment);
         return commentMapper.toCommentResponseDto(newComment,
                 userMapper.toUserShorDto(newComment.getAuthor()));
     }
 
+
     @Override
     @Transactional
-    public void deleteComment(Long userId, Long commentId) {
+    public void deleteUsersComment(Long userId, Long commentId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-        if (!commentRepository.existsById(commentId)) {
+        if (!commentRepository.existsByIdAndAuthor_Id(commentId, userId)) {
             throw new NotFoundException("Comment with id=" + commentId + " was not found");
         }
+
         commentRepository.deleteById(commentId);
     }
 
@@ -162,7 +169,7 @@ public class CommentServiceImpl implements CommentService {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-        final Comment comment = commentRepository.findById(commentId)
+        final Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         return commentMapper.toCommentResponseDto(comment,
                 userMapper.toUserShorDto(comment.getAuthor()));
@@ -175,13 +182,12 @@ public class CommentServiceImpl implements CommentService {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-        final Comment comment = commentRepository.findById(commentId)
+        Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         final String text = updateCommentUserRequest.getText();
-
         if (text != null) {
             comment.setText(text);
-            comment.setState(StateComment.PENDING);
+            comment.setEditedOn(LocalDateTime.now());
             final Comment updatedComment = commentRepository.save(comment);
             return commentMapper.toCommentResponseDto(updatedComment,
                     userMapper.toUserShorDto(updatedComment.getAuthor()));
@@ -195,57 +201,46 @@ public class CommentServiceImpl implements CommentService {
     public CommentResponseDto commentProcessingAdmin(Long commentId, String action) {
         final Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
-        final StateComment stateComment = comment.getState();
-        if (stateComment != StateComment.PENDING) {
-            throw new ConflictException("The comment is in the wrong state: " + stateComment);
-        }
-        if ("PUBLISHED".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.PUBLISHED);
-            comment.setPublishedOn(LocalDateTime.now());
-        } else if ("CANCELED_INTOLERANCE".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.CANCELED_INTOLERANCE);
-        } else if ("CANCELED_RUDENESS".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.CANCELED_RUDENESS);
-        } else if ("CANCELED_EXTREMISM".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.CANCELED_EXTREMISM);
-        } else if ("CANCELED_SPAM".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.CANCELED_SPAM);
-        } else if ("CANCELED_PORNOGRAPHY".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.CANCELED_PORNOGRAPHY);
-        } else if ("CANCELED_PROHIBITION".equalsIgnoreCase(action)) {
-            comment.setState(StateComment.CANCELED_PROHIBITION);
-        } else {
-            throw new ValidationException("Unknown state: " + action);
-        }
+        comment.setState(makeStateComment(action));
         final Comment updatedComment = commentRepository.save(comment);
+        return commentMapper.toCommentResponseDto(updatedComment,
+                userMapper.toUserShorDto(updatedComment.getAuthor()));
+    }
 
-        return commentMapper.toCommentResponseDto(updatedComment, userMapper.toUserShorDto(updatedComment.getAuthor()));
+    private void checkingForSpam(Long userId, Long eventId) {
+        final Sort sorting = Sort.by(Sort.Order.desc("id"));
+        int size = 1;
+        final Pageable pageable = PageRequest.of(0, size, sorting);
+        final List<Comment> comments = commentRepository
+                .findCommentsByParameters(List.of(userId), List.of(eventId),
+                        null, null, null, pageable);
+        long differenceInMinutes = 1L;
+        if (comments != null && !comments.isEmpty()) {
+            Comment comment = comments.get(0);
+            if (comment.getCreatedOn().isBefore(LocalDateTime.now().plusMinutes(differenceInMinutes))) {
+                throw new ValidationException("this comment is spam");
+            }
+        }
+    }
+
+    private StateComment makeStateComment(String state) {
+        if ("PUBLISHED".equalsIgnoreCase(state)) {
+            return StateComment.PUBLISHED;
+        } else if ("PENDING".equalsIgnoreCase(state)) {
+            return StateComment.PENDING;
+        } else if ("TO_DELETE".equalsIgnoreCase(state)) {
+            return StateComment.TO_DELETE;
+        } else {
+            throw new ValidationException("Unknown state: " + state);
+        }
     }
 
     private List<StateComment> makeStatesComment(List<String> statesComment) {
         if (statesComment == null || statesComment.isEmpty()) {
             return null;
         }
-        List<StateComment> states = new ArrayList<>();
-        for (String state : statesComment) {
-            if ("PUBLISHED".equalsIgnoreCase(state)) {
-                states.add(StateComment.PUBLISHED);
-            } else if ("CANCELED_INTOLERANCE".equalsIgnoreCase(state)) {
-                states.add(StateComment.CANCELED_INTOLERANCE);
-            } else if ("CANCELED_RUDENESS".equalsIgnoreCase(state)) {
-                states.add(StateComment.CANCELED_RUDENESS);
-            } else if ("CANCELED_EXTREMISM".equalsIgnoreCase(state)) {
-                states.add(StateComment.CANCELED_EXTREMISM);
-            } else if ("CANCELED_SPAM".equalsIgnoreCase(state)) {
-                states.add(StateComment.CANCELED_SPAM);
-            } else if ("CANCELED_PORNOGRAPHY".equalsIgnoreCase(state)) {
-                states.add(StateComment.CANCELED_PORNOGRAPHY);
-            } else if ("CANCELED_PROHIBITION".equalsIgnoreCase(state)) {
-                states.add(StateComment.CANCELED_PROHIBITION);
-            } else {
-                throw new ValidationException("Unknown state: " + state);
-            }
-        }
-        return states;
+        return statesComment.stream()
+                .map(this::makeStateComment)
+                .collect(Collectors.toList());
     }
 }

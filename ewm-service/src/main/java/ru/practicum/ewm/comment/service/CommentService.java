@@ -19,7 +19,7 @@ public interface CommentService {
 
     CommentResponseDto createComment(Long userId, Long eventId, NewCommentRequest newComment);
 
-    void deleteComment(Long userId, Long commentId);
+    void deleteUsersComment(Long userId, Long commentId);
 
     CommentResponseDto getUsersCommentById(Long userId, Long commentId);
 

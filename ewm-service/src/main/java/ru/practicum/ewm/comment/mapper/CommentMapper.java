@@ -19,13 +19,13 @@ public class CommentMapper {
 
     public CommentResponseDto toCommentResponseDto(Comment comment, UserShortDto author) {
         final LocalDateTime createdOn = comment.getCreatedOn();
-        final LocalDateTime publishedOn = comment.getPublishedOn();
+        final LocalDateTime editedOn = comment.getEditedOn();
         return CommentResponseDto.builder()
                 .id(comment.getId())
                 .eventId(comment.getEvent().getId())
                 .author(author)
                 .createdOn((createdOn == null) ? null : createdOn.format(formatter))
-                .publishedOn((publishedOn == null) ? null : publishedOn.format(formatter))
+                .editedOn((editedOn == null) ? null : editedOn.format(formatter))
                 .text(comment.getText())
                 .state(comment.getState())
                 .build();
@@ -37,7 +37,7 @@ public class CommentMapper {
                 .author(author)
                 .createdOn(LocalDateTime.now())
                 .text(newCommentDto.getText())
-                .state(StateComment.PENDING)
+                .state(StateComment.PUBLISHED)
                 .build();
     }
 }

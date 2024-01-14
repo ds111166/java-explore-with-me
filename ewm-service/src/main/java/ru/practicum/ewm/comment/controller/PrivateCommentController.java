@@ -45,7 +45,7 @@ public class PrivateCommentController {
             @PathVariable @NotNull Long userId,
             @PathVariable @NotNull Long commentId) {
         log.info("Удаление комментария: userId={}, commentId={}", userId, commentId);
-        commentService.deleteComment(userId, commentId);
+        commentService.deleteUsersComment(userId, commentId);
         log.info("Удален комментарий: commentId={}", commentId);
     }
 

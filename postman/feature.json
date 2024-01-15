@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "1addbe7c-8b39-405d-a88d-d4ba25a76efc",
+		"_postman_id": "07d4565b-df87-4ab3-9e01-7e55da354d24",
 		"name": "Test Explore With Me - feature comments",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "28881659"
@@ -422,7 +422,9 @@
 									"        let event = await api.addEvent(user.id, rnd.getEvent(category.id));",
 									"        event = await api.publishEvent(event.id);",
 									"        pm.collectionVariables.set(\"eid\", event.id)",
+									"        pm.collectionVariables.set(\"response\", event)",
 									"        comment = rnd.getComment();",
+									"        ",
 									"    } catch(err) {",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);",
 									"    }",
@@ -523,11 +525,10 @@
 									"        const category = await api.addCategory(rnd.getCategory());",
 									"        let event = await api.addEvent(user.id, rnd.getEvent(category.id));",
 									"        event = await api.publishEvent(event.id);",
+									"        let comment = await api.addComment(user.id, event.id, rnd.getComment());",
 									"        pm.collectionVariables.set(\"eid\", event.id)",
-									"        ",
-									"        comment = await api.addComment(user.id, event.id, rnd.getComment());",
-									"        pm.collectionVariables.set(\"response\", comment)",
 									"        pm.collectionVariables.set(\"commid\", comment.id)",
+									"        pm.collectionVariables.set(\"response\", comment)",
 									"    } catch(err) {",
 									"        console.error(\"Ошибка при подготовке тестовых данных.\", err);",
 									"    }",
@@ -575,6 +576,7 @@
 									"pm.expect(target).to.have.property('text');",
 									"pm.expect(target).to.have.property('state');",
 									"});",
+									"",
 									"",
 									"pm.test(\"Данные в ответе должны соответствовать данным в запросе\", function () {",
 									"    pm.expect(source.id).equal(target.id, 'Идентификатор комментария должен соответствовать идентификатору в запросе');",
@@ -1954,57 +1956,57 @@
 		},
 		{
 			"key": "uid",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "eid",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "commid",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "claimid",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "uid1",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "uid2",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "uid3",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "eid1",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "eid2",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "eid3",
-			"value": "",
+			"value": "0",
 			"type": "string"
 		},
 		{
 			"key": "response",
-			"value": "",
+			"value": "[object Object]",
 			"type": "string"
 		}
 	]

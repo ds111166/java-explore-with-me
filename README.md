@@ -5,6 +5,7 @@ Template repository for ExploreWithMe project.
 * claim - претензия  ид, ид евента, ил юзера, причина, описание - сделать
 * postman tests
 * debug
+* console.log(pm.collectionVariables.get('CollectionVar'));
 
   
 

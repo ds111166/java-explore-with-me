@@ -16,6 +16,7 @@ import ru.practicum.ewm.comment.repository.CommentRepository;
 import ru.practicum.ewm.event.data.StateEvent;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
+import ru.practicum.ewm.exception.ForbiddenException;
 import ru.practicum.ewm.exception.NotFoundException;
 import ru.practicum.ewm.user.mapper.UserMapper;
 import ru.practicum.ewm.user.model.User;
@@ -25,6 +26,8 @@ import javax.validation.ValidationException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,7 +49,7 @@ public class CommentServiceImpl implements CommentService {
             String rangeEnd, Integer size, Integer from) {
         List<Long> userIds = (users != null && !users.isEmpty()) ? users : null;
         List<Long> eventIds = (events != null && !events.isEmpty()) ? events : null;
-        List<StateComment> states = makeStatesComment(statesComment);
+        List<Integer> states = makeStatesComment(statesComment);
         final LocalDateTime startDate;
         if (rangeStart == null) {
             startDate = null;
@@ -94,7 +97,7 @@ public class CommentServiceImpl implements CommentService {
 
         List<Long> userIds = (userId != null) ? List.of(userId) : null;
         List<Long> eventIds = (events != null && !events.isEmpty()) ? events : null;
-        List<StateComment> states = makeStatesComment(statesComment);
+        List<Integer> states = makeStatesComment(statesComment);
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
         final List<Comment> comments = commentRepository
@@ -108,15 +111,20 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public List<CommentResponseDto> getPublishedEventComments(
-            Long eventId, Integer size, Integer from) {
-        List<Long> eventIds = (eventId != null) ? List.of(eventId) : null;
-        List<StateComment> states = List.of(StateComment.PUBLISHED);
+    public List<CommentResponseDto> getPublishedEventComments(Long eventId, Integer size, Integer from) {
+        final Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
+        final StateEvent eventState = event.getState();
+        if(!StateEvent.PUBLISHED.equals(eventState)) {
+            throw new ForbiddenException("Comment with id=" + eventId + " has not been published");
+        }
+        List<Long> eventIds = List.of(eventId);
+        List<Integer> states0 = List.of(StateComment.PUBLISHED.ordinal());
 
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
         final List<Comment> comments = commentRepository
-                .findCommentsByParameters(null, eventIds, states, null, null, pageable);
+                .findCommentsByParameters(null, eventIds, states0, null, null, pageable);
         return comments.stream()
                 .map(comment -> commentMapper.toCommentResponseDto(
                         comment,
@@ -148,6 +156,16 @@ public class CommentServiceImpl implements CommentService {
                 userMapper.toUserShorDto(newComment.getAuthor()));
     }
 
+    @Override
+    @Transactional
+    public void deleteAdminComment(Long commentId) {
+        if (!commentRepository.existsById(commentId)) {
+            throw new NotFoundException("Comment with id=" + commentId + " was not found");
+        }
+        commentRepository.deleteById(commentId);
+    }
+
+
 
     @Override
     @Transactional
@@ -155,25 +173,52 @@ public class CommentServiceImpl implements CommentService {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-        if (!commentRepository.existsByIdAndAuthor_Id(commentId, userId)) {
-            throw new NotFoundException("Comment with id=" + commentId + " was not found");
+        final Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(()->new NotFoundException("Comment with id=" + commentId + " was not found"));
+        final Long authorId = comment.getAuthor().getId();
+        if (!Objects.equals(userId, authorId)) {
+            throw new ForbiddenException("A comment with id=" + commentId + " is not available for deletion");
         }
-
         commentRepository.deleteById(commentId);
     }
 
-
+    @Override
+    @Transactional
+    public CommentResponseDto getCommentById(Long commentId) {
+        final Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
+        if(!StateComment.PUBLISHED.equals(comment.getState())) {
+            throw new ForbiddenException("Comment with id=" + commentId + " has not been published");
+        }
+        return commentMapper.toCommentResponseDto(comment,
+                userMapper.toUserShorDto(comment.getAuthor()));
+    }
     @Override
     @Transactional
     public CommentResponseDto getUsersCommentById(Long userId, Long commentId) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-        final Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
+        final Comment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
+        final StateComment commentState = comment.getState();
+        final User author = comment.getAuthor();
+        if(!StateComment.PUBLISHED.equals(commentState) && !userId.equals(author.getId())) {
+            throw new ForbiddenException("Comment with id=" + commentId + " has not been published");
+        }
+        return commentMapper.toCommentResponseDto(comment,
+                userMapper.toUserShorDto(comment.getAuthor()));
+    }
+
+    @Override
+    @Transactional
+    public CommentResponseDto getAdminCommentById(Long commentId) {
+        final Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         return commentMapper.toCommentResponseDto(comment,
                 userMapper.toUserShorDto(comment.getAuthor()));
     }
+
 
     @Override
     @Transactional
@@ -182,8 +227,13 @@ public class CommentServiceImpl implements CommentService {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
-        Comment comment = commentRepository.findByIdAndAuthor_Id(commentId, userId)
+        Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
+
+        final Long authorId = comment.getAuthor().getId();
+        if (!Objects.equals(userId, authorId)) {
+            throw new ForbiddenException("A comment with id=" + commentId + " is not available for editing");
+        }
         final String text = updateCommentUserRequest.getText();
         if (text != null) {
             comment.setText(text);
@@ -206,6 +256,8 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentResponseDto(updatedComment,
                 userMapper.toUserShorDto(updatedComment.getAuthor()));
     }
+
+
 
     private void checkingForSpam(Long userId, Long eventId) {
         final Sort sorting = Sort.by(Sort.Order.desc("id"));
@@ -235,12 +287,13 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
-    private List<StateComment> makeStatesComment(List<String> statesComment) {
+    private List<Integer> makeStatesComment(List<String> statesComment) {
         if (statesComment == null || statesComment.isEmpty()) {
             return null;
         }
         return statesComment.stream()
                 .map(this::makeStateComment)
+                .map(Enum::ordinal)
                 .collect(Collectors.toList());
     }
 }

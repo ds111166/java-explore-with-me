@@ -42,6 +42,16 @@ public class AdminCommentController {
         return comments;
     }
 
+    @GetMapping("/{commentId}")
+    @ResponseStatus(HttpStatus.OK)
+    public CommentResponseDto getAdminCommentById(
+            @PathVariable @NotNull Long commentId) {
+        log.info("Получение комментария: commentId={}", commentId);
+        final CommentResponseDto comment = commentService.getAdminCommentById(commentId);
+        log.info("Return comment = \"{}\"", comment);
+        return comment;
+    }
+
     @PatchMapping("/{commentId}")
     @Validated({Marker.OnUpdate.class})
     @ResponseStatus(HttpStatus.OK)
@@ -62,5 +72,13 @@ public class AdminCommentController {
         log.info("Удаление комментариев админом: ids={}", ids);
         commentService.deleteAdminComments(ids);
         log.info("Удалены комментарии ids={}", ids);
+    }
+
+    @DeleteMapping("/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteAdminComment(@PathVariable @NotNull Long commentId) {
+        log.info("Удаление комментария админом: commentId={}", commentId);
+        commentService.deleteAdminComment(commentId);
+        log.info("Удален комментарий commentId={}", commentId);
     }
 }

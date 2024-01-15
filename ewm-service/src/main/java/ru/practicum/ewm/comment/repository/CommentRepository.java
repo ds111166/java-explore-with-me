@@ -14,15 +14,15 @@ import java.util.Optional;
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     @Query(value = "select * from comments as c " +
-            "where (c.event_id in (:eventIds) or eventIds is null) " +
-            "and (c.author_id in (:userIds) or userIds is null) " +
+            "where (c.event_id in (:eventIds) or :eventIds is null) " +
+            "and (c.author_id in (:userIds) or :userIds is null) " +
             "and (c.state_id in (:states) or :states is null) " +
             "and (c.created_on between :startDate and :endDate or :startDate is null or :endDate is null)",
             nativeQuery = true)
     List<Comment> findCommentsByParameters(
             @Param("userIds") List<Long> userIds,
             @Param("eventIds") List<Long> eventIds,
-            @Param("states") List<StateComment> states,
+            @Param("states") List<Integer> states,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable);

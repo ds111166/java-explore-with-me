@@ -31,7 +31,7 @@ public class PrivateCommentController {
     public CommentResponseDto createUsersComment(
             @PathVariable @NotNull Long userId,
             @RequestParam @NotNull Long eventId,
-            @Valid @RequestBody NewCommentRequest newComment) {
+            @RequestBody @Valid @NotNull(message = "The comment cannot be empty") NewCommentRequest newComment) {
         log.info("Добавление нового комментария: userId={}, eventId={}, newComment=\"{}\"",
                 userId, eventId, newComment);
         final CommentResponseDto comment = commentService.createComment(userId, eventId, newComment);

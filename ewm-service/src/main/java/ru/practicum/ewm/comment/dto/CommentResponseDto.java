@@ -3,12 +3,14 @@ package ru.practicum.ewm.comment.dto;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import ru.practicum.ewm.comment.data.StateComment;
 import ru.practicum.ewm.user.dto.UserShortDto;
 
 @Data
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor
 public class CommentResponseDto {
     private Long id;
     private Long eventId;           // id события

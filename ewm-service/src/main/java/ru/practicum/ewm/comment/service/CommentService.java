@@ -26,4 +26,10 @@ public interface CommentService {
     CommentResponseDto updateUserComment(Long userId, Long commentId, UpdateCommentUserRequest updateCommentUserRequest);
 
     CommentResponseDto commentProcessingAdmin(Long commentId, String action);
+
+    CommentResponseDto getAdminCommentById(Long commentId);
+
+    void deleteAdminComment(Long commentId);
+
+    CommentResponseDto getCommentById(Long commentId);
 }

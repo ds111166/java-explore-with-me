@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -115,7 +114,7 @@ public class CommentServiceImpl implements CommentService {
         final Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         final StateEvent eventState = event.getState();
-        if(!StateEvent.PUBLISHED.equals(eventState)) {
+        if (!StateEvent.PUBLISHED.equals(eventState)) {
             throw new ForbiddenException("Comment with id=" + eventId + " has not been published");
         }
         List<Long> eventIds = List.of(eventId);
@@ -166,7 +165,6 @@ public class CommentServiceImpl implements CommentService {
     }
 
 
-
     @Override
     @Transactional
     public void deleteUsersComment(Long userId, Long commentId) {
@@ -174,7 +172,7 @@ public class CommentServiceImpl implements CommentService {
             throw new NotFoundException("User with id=" + userId + " was not found");
         }
         final Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(()->new NotFoundException("Comment with id=" + commentId + " was not found"));
+                .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         final Long authorId = comment.getAuthor().getId();
         if (!Objects.equals(userId, authorId)) {
             throw new ForbiddenException("A comment with id=" + commentId + " is not available for deletion");
@@ -187,12 +185,13 @@ public class CommentServiceImpl implements CommentService {
     public CommentResponseDto getCommentById(Long commentId) {
         final Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
-        if(!StateComment.PUBLISHED.equals(comment.getState())) {
+        if (!StateComment.PUBLISHED.equals(comment.getState())) {
             throw new ForbiddenException("Comment with id=" + commentId + " has not been published");
         }
         return commentMapper.toCommentResponseDto(comment,
                 userMapper.toUserShorDto(comment.getAuthor()));
     }
+
     @Override
     @Transactional
     public CommentResponseDto getUsersCommentById(Long userId, Long commentId) {
@@ -203,7 +202,7 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         final StateComment commentState = comment.getState();
         final User author = comment.getAuthor();
-        if(!StateComment.PUBLISHED.equals(commentState) && !userId.equals(author.getId())) {
+        if (!StateComment.PUBLISHED.equals(commentState) && !userId.equals(author.getId())) {
             throw new ForbiddenException("Comment with id=" + commentId + " has not been published");
         }
         return commentMapper.toCommentResponseDto(comment,
@@ -256,7 +255,6 @@ public class CommentServiceImpl implements CommentService {
         return commentMapper.toCommentResponseDto(updatedComment,
                 userMapper.toUserShorDto(updatedComment.getAuthor()));
     }
-
 
 
     private void checkingForSpam(Long userId, Long eventId) {

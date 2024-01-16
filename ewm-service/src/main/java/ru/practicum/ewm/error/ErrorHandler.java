@@ -37,6 +37,7 @@ public class ErrorHandler {
         log.error("{}: {}", errorResponse.getStatus(), errorResponse.getMessage());
         return errorResponse;
     }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException exception) {
@@ -49,6 +50,7 @@ public class ErrorHandler {
         log.error("{}: {}", errorResponse.getStatus(), errorResponse.getMessage());
         return errorResponse;
     }
+
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleValidationException(ValidationException exception) {

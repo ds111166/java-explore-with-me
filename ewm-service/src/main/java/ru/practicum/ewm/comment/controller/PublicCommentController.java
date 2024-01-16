@@ -36,6 +36,7 @@ public class PublicCommentController {
                 .map(CommentResponseDto::getId).collect(Collectors.toList()));
         return comments;
     }
+
     @GetMapping("/{commentId}")
     @ResponseStatus(HttpStatus.OK)
     public CommentResponseDto getCommentById(

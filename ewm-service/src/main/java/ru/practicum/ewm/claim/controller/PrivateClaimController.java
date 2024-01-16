@@ -22,14 +22,14 @@ public class PrivateClaimController {
     @PostMapping
     @Validated({Marker.OnCreate.class})
     @ResponseStatus(HttpStatus.CREATED)
-    public void createClaim(
+    public ClaimResponseDto createClaim(
             @PathVariable @NotNull Long userId,
             @RequestParam @NotNull Long commentId,
-            @RequestParam String causeClaim) {
+            @RequestParam(defaultValue = "SPAM", required = false) String cause) {
         log.info("Претензия: userId={}, commentId={}, causeClaim={}",
-                userId, commentId, causeClaim);
-        ClaimResponseDto claim = claimService.createClaim(userId, commentId, causeClaim);
-        log.info("Добавлеа претензия: {}", claim);
+                userId, commentId, cause);
+        ClaimResponseDto claim = claimService.createClaim(userId, commentId, cause);
+        log.info("Добавлена претензия: {}", claim);
+        return claim;
     }
-
 }

@@ -68,7 +68,7 @@ public class ClaimServiceImpl implements ClaimService {
             List<String> causesClaim, String rangeStart, String rangeEnd, Integer size, Integer from) {
         List<Long> userIds = (users != null && !users.isEmpty()) ? users : null;
         List<Long> commentIds = (comments != null && !comments.isEmpty()) ? comments : null;
-        List<CauseClaim> causes = makeCausesClaim(causesClaim);
+        List<Integer> causes = makeCausesClaim(causesClaim);
         final LocalDateTime startDate;
         if (rangeStart == null) {
             startDate = null;
@@ -137,9 +137,10 @@ public class ClaimServiceImpl implements ClaimService {
         }
     }
 
-    private List<CauseClaim> makeCausesClaim(List<String> causesClaim) {
+    private List<Integer> makeCausesClaim(List<String> causesClaim) {
         return causesClaim.stream()
                 .map(this::makeCauseClaim)
+                .map(Enum::ordinal)
                 .collect(Collectors.toList());
     }
 

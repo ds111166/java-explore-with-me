@@ -31,8 +31,8 @@ public class AdminClaimController {
             @Min(value = 1) @RequestParam(defaultValue = "10", required = false) Integer size,
             @Min(value = 0) @RequestParam(defaultValue = "0", required = false) Integer from
     ) {
-        log.info("Получение списка претезий админом: users={}, comments={}, causes={}, rangeStart={}, rangeEnd={}," +
-                        " size={}, from={}",
+        log.info("Получение списка претензий админом: users={}, comments={}, causes={}, " +
+                        "rangeStart={}, rangeEnd={}, size={}, from={}",
                 users, comments, causes, rangeStart, rangeEnd, size, from);
         final List<ClaimResponseDto> claims = claimService.getAdminClaims(users, comments, causes,
                 rangeStart, rangeEnd, size, from);

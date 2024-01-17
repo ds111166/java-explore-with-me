@@ -70,7 +70,6 @@ public class ClaimServiceImpl implements ClaimService {
             List<String> causesClaim, String rangeStart, String rangeEnd, Integer size, Integer from) {
         List<Long> userIds = (users != null && !users.isEmpty()) ? users : null;
         List<Long> commentIds = (comments != null && !comments.isEmpty()) ? comments : null;
-        //List<Integer> causes = makeCausesClaim(causesClaim);
         List<CauseClaim> causes = makeCausesClaim(causesClaim);
         final LocalDateTime startDate;
         if (rangeStart == null) {

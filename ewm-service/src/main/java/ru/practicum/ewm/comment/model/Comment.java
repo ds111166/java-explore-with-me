@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "comments")
+@Table(name = "comments_event")
 public class Comment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +30,7 @@ public class Comment {
     @Column(name = "created_on", nullable = false)
     private LocalDateTime createdOn;    //Дата и время создания комментария (формат "yyyy-MM-dd HH:mm:ss")
     @Column(name = "edited_on")
-    private LocalDateTime editedOn;  //Дата и время последненго редактирования комментария или NULL
+    private LocalDateTime editedOn;     //Дата и время последнего редактирования комментария или NULL
     @Column(name = "text", nullable = false, length = 2048)
     private String text;                //Текст комментария
     @Column(name = "state_id")

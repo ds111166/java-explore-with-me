@@ -30,7 +30,7 @@ public class AdminCompilationController {
     ) {
         log.info("Добавление новой подборки: newCompilation=\"{}\"", newCompilation);
         final CompilationDto createdCompilation = compilationService.createCompilation(newCompilation);
-        log.info("Добавлена поборка: \"{}\"", createdCompilation);
+        log.info("Добавлена подборка: \"{}\"", createdCompilation);
         return createdCompilation;
     }
 
@@ -52,7 +52,7 @@ public class AdminCompilationController {
     ) {
         log.info("Обновление подборки compId={}, updateCompilation=\"{}\"", compId, updateCompilation);
         final CompilationDto updatedCompilation = compilationService.updateCompilation(compId, updateCompilation);
-        log.info("Обновлена поборка: \"{}\"", updatedCompilation);
+        log.info("Обновлена подборка: \"{}\"", updatedCompilation);
         return updatedCompilation;
     }
 }

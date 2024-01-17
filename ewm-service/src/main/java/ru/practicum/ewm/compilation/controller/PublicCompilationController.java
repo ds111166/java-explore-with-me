@@ -37,7 +37,7 @@ public class PublicCompilationController {
     public CompilationDto getCompilationById(
             @PathVariable @NotNull Long compId
     ) {
-        log.info("Получение подбороки событий compId={}", compId);
+        log.info("Получение подборки событий compId={}", compId);
         final CompilationDto compilation = compilationService.getCompilationById(compId);
         log.info("Return compilation = \"{}\"", compilation);
         return compilation;

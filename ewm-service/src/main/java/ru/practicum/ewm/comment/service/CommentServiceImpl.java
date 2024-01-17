@@ -13,6 +13,7 @@ import ru.practicum.ewm.comment.dto.UpdateCommentUserRequest;
 import ru.practicum.ewm.comment.mapper.CommentMapper;
 import ru.practicum.ewm.comment.model.Comment;
 import ru.practicum.ewm.comment.repository.CommentRepository;
+import ru.practicum.ewm.comment.repository.CommentRepositoryCustom;
 import ru.practicum.ewm.event.data.StateEvent;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
@@ -36,6 +37,7 @@ public class CommentServiceImpl implements CommentService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final CommentRepository commentRepository;
+    private final CommentRepositoryCustom commentRepositoryCustom;
     private final CommentMapper commentMapper;
     private final UserRepository userRepository;
     private final UserMapper userMapper;
@@ -48,7 +50,7 @@ public class CommentServiceImpl implements CommentService {
             String rangeEnd, Integer size, Integer from) {
         List<Long> userIds = (users != null && !users.isEmpty()) ? users : null;
         List<Long> eventIds = (events != null && !events.isEmpty()) ? events : null;
-        List<Integer> states = makeStatesComment(statesComment);
+        List<StateComment> states = makeStatesComment(statesComment);
         final LocalDateTime startDate;
         if (rangeStart == null) {
             startDate = null;
@@ -78,12 +80,12 @@ public class CommentServiceImpl implements CommentService {
         }
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        final List<Comment> comments = commentRepository
+        final List<Comment> comments = commentRepositoryCustom
                 .findCommentsByParameters(userIds, eventIds, states, startDate, endDate, pageable);
         return comments.stream()
                 .map(comment -> commentMapper.toCommentResponseDto(
                         comment,
-                        userMapper.toUserShorDto(comment.getAuthor())))
+                        userMapper.toUserGetPublicResponse(comment.getAuthor())))
                 .collect(Collectors.toList());
     }
 
@@ -96,15 +98,15 @@ public class CommentServiceImpl implements CommentService {
 
         List<Long> userIds = (userId != null) ? List.of(userId) : null;
         List<Long> eventIds = (events != null && !events.isEmpty()) ? events : null;
-        List<Integer> states = makeStatesComment(statesComment);
+        List<StateComment> states = makeStatesComment(statesComment);
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        final List<Comment> comments = commentRepository
+        final List<Comment> comments = commentRepositoryCustom
                 .findCommentsByParameters(userIds, eventIds, states, null, null, pageable);
         return comments.stream()
                 .map(comment -> commentMapper.toCommentResponseDto(
                         comment,
-                        userMapper.toUserShorDto(comment.getAuthor())))
+                        userMapper.toUserGetPublicResponse(comment.getAuthor())))
                 .collect(Collectors.toList());
     }
 
@@ -118,16 +120,16 @@ public class CommentServiceImpl implements CommentService {
             throw new ForbiddenException("Comment with id=" + eventId + " has not been published");
         }
         List<Long> eventIds = List.of(eventId);
-        List<Integer> states0 = List.of(StateComment.PUBLISHED.ordinal());
+        List<StateComment> states = List.of(StateComment.PUBLISHED);
 
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        final List<Comment> comments = commentRepository
-                .findCommentsByParameters(null, eventIds, states0, null, null, pageable);
+        final List<Comment> comments = commentRepositoryCustom
+                .findCommentsByParameters(null, eventIds, states, null, null, pageable);
         return comments.stream()
                 .map(comment -> commentMapper.toCommentResponseDto(
                         comment,
-                        userMapper.toUserShorDto(comment.getAuthor())))
+                        userMapper.toUserGetPublicResponse(comment.getAuthor())))
                 .collect(Collectors.toList());
     }
 
@@ -152,7 +154,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentMapper.toComment(newCommentDto, author, event);
         final Comment newComment = commentRepository.save(comment);
         return commentMapper.toCommentResponseDto(newComment,
-                userMapper.toUserShorDto(newComment.getAuthor()));
+                userMapper.toUserGetPublicResponse(newComment.getAuthor()));
     }
 
     @Override
@@ -189,7 +191,7 @@ public class CommentServiceImpl implements CommentService {
             throw new ForbiddenException("Comment with id=" + commentId + " has not been published");
         }
         return commentMapper.toCommentResponseDto(comment,
-                userMapper.toUserShorDto(comment.getAuthor()));
+                userMapper.toUserGetPublicResponse(comment.getAuthor()));
     }
 
     @Override
@@ -206,7 +208,7 @@ public class CommentServiceImpl implements CommentService {
             throw new ForbiddenException("Comment with id=" + commentId + " has not been published");
         }
         return commentMapper.toCommentResponseDto(comment,
-                userMapper.toUserShorDto(comment.getAuthor()));
+                userMapper.toUserGetPublicResponse(comment.getAuthor()));
     }
 
     @Override
@@ -215,7 +217,7 @@ public class CommentServiceImpl implements CommentService {
         final Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new NotFoundException("Comment with id=" + commentId + " was not found"));
         return commentMapper.toCommentResponseDto(comment,
-                userMapper.toUserShorDto(comment.getAuthor()));
+                userMapper.toUserGetPublicResponse(comment.getAuthor()));
     }
 
 
@@ -239,10 +241,10 @@ public class CommentServiceImpl implements CommentService {
             comment.setEditedOn(LocalDateTime.now());
             final Comment updatedComment = commentRepository.save(comment);
             return commentMapper.toCommentResponseDto(updatedComment,
-                    userMapper.toUserShorDto(updatedComment.getAuthor()));
+                    userMapper.toUserGetPublicResponse(updatedComment.getAuthor()));
         }
         return commentMapper.toCommentResponseDto(comment,
-                userMapper.toUserShorDto(comment.getAuthor()));
+                userMapper.toUserGetPublicResponse(comment.getAuthor()));
     }
 
     @Override
@@ -253,7 +255,7 @@ public class CommentServiceImpl implements CommentService {
         comment.setState(makeStateComment(action));
         final Comment updatedComment = commentRepository.save(comment);
         return commentMapper.toCommentResponseDto(updatedComment,
-                userMapper.toUserShorDto(updatedComment.getAuthor()));
+                userMapper.toUserGetPublicResponse(updatedComment.getAuthor()));
     }
 
 
@@ -261,7 +263,7 @@ public class CommentServiceImpl implements CommentService {
         final Sort sorting = Sort.by(Sort.Order.desc("id"));
         int size = 1;
         final Pageable pageable = PageRequest.of(0, size, sorting);
-        final List<Comment> comments = commentRepository
+        final List<Comment> comments = commentRepositoryCustom
                 .findCommentsByParameters(List.of(userId), List.of(eventId),
                         null, null, null, pageable);
         long differenceInMinutes = 1L;
@@ -285,13 +287,12 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
-    private List<Integer> makeStatesComment(List<String> statesComment) {
+    private List<StateComment> makeStatesComment(List<String> statesComment) {
         if (statesComment == null || statesComment.isEmpty()) {
             return null;
         }
         return statesComment.stream()
                 .map(this::makeStateComment)
-                .map(Enum::ordinal)
                 .collect(Collectors.toList());
     }
 }

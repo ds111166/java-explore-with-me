@@ -9,7 +9,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class FindEventsParametrs {
+public class FindEventsParameters {
     public List<Long> users;
     public List<StateEvent> states;
     public List<Long> categories;

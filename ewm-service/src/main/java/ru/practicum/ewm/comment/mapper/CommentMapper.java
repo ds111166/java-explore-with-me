@@ -6,7 +6,7 @@ import ru.practicum.ewm.comment.dto.CommentResponseDto;
 import ru.practicum.ewm.comment.dto.NewCommentRequest;
 import ru.practicum.ewm.comment.model.Comment;
 import ru.practicum.ewm.event.model.Event;
-import ru.practicum.ewm.user.dto.UserShortDto;
+import ru.practicum.ewm.user.dto.UserGetPublicResponse;
 import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
@@ -17,7 +17,7 @@ public class CommentMapper {
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public CommentResponseDto toCommentResponseDto(Comment comment, UserShortDto author) {
+    public CommentResponseDto toCommentResponseDto(Comment comment, UserGetPublicResponse author) {
         final LocalDateTime createdOn = comment.getCreatedOn();
         final LocalDateTime editedOn = comment.getEditedOn();
         return CommentResponseDto.builder()

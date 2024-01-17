@@ -11,6 +11,7 @@ import ru.practicum.ewm.claim.dto.ClaimResponseDto;
 import ru.practicum.ewm.claim.mapper.ClaimMapper;
 import ru.practicum.ewm.claim.model.Claim;
 import ru.practicum.ewm.claim.repository.ClaimRepository;
+import ru.practicum.ewm.claim.repository.ClaimRepositoryCustom;
 import ru.practicum.ewm.comment.mapper.CommentMapper;
 import ru.practicum.ewm.comment.model.Comment;
 import ru.practicum.ewm.comment.repository.CommentRepository;
@@ -33,6 +34,7 @@ public class ClaimServiceImpl implements ClaimService {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final ClaimRepository claimRepository;
+    private final ClaimRepositoryCustom claimRepositoryCustom;
     private final UserRepository userRepository;
     private final CommentRepository commentRepository;
     private final CommentMapper commentMapper;
@@ -57,7 +59,7 @@ public class ClaimServiceImpl implements ClaimService {
         return claimMapper.toClaimResponseDto(
                 savedClaim,
                 commentMapper.toCommentResponseDto(comment,
-                        userMapper.toUserShorDto(comment.getAuthor()))
+                        userMapper.toUserGetPublicResponse(comment.getAuthor()))
         );
     }
 
@@ -68,7 +70,8 @@ public class ClaimServiceImpl implements ClaimService {
             List<String> causesClaim, String rangeStart, String rangeEnd, Integer size, Integer from) {
         List<Long> userIds = (users != null && !users.isEmpty()) ? users : null;
         List<Long> commentIds = (comments != null && !comments.isEmpty()) ? comments : null;
-        List<Integer> causes = makeCausesClaim(causesClaim);
+        //List<Integer> causes = makeCausesClaim(causesClaim);
+        List<CauseClaim> causes = makeCausesClaim(causesClaim);
         final LocalDateTime startDate;
         if (rangeStart == null) {
             startDate = null;
@@ -98,12 +101,12 @@ public class ClaimServiceImpl implements ClaimService {
         }
         final Sort sorting = Sort.by(Sort.Order.asc("id"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        List<Claim> claims = claimRepository.findClaimsByParameters(userIds, commentIds, causes,
+        List<Claim> claims = claimRepositoryCustom.findClaimsByParameters(userIds, commentIds, causes,
                 startDate, endDate, pageable);
         return claims.stream()
                 .map(claim -> claimMapper.toClaimResponseDto(claim,
                         commentMapper.toCommentResponseDto(claim.getComment(),
-                                userMapper.toUserShorDto(claim.getComment().getAuthor()))))
+                                userMapper.toUserGetPublicResponse(claim.getComment().getAuthor()))))
                 .collect(Collectors.toList());
     }
 
@@ -116,7 +119,7 @@ public class ClaimServiceImpl implements ClaimService {
         return claimMapper.toClaimResponseDto(
                 claim,
                 commentMapper.toCommentResponseDto(comment,
-                        userMapper.toUserShorDto(comment.getAuthor()))
+                        userMapper.toUserGetPublicResponse(comment.getAuthor()))
         );
     }
 
@@ -137,10 +140,12 @@ public class ClaimServiceImpl implements ClaimService {
         }
     }
 
-    private List<Integer> makeCausesClaim(List<String> causesClaim) {
+    private List<CauseClaim> makeCausesClaim(List<String> causesClaim) {
+        if (causesClaim == null || causesClaim.isEmpty()) {
+            return null;
+        }
         return causesClaim.stream()
                 .map(this::makeCauseClaim)
-                .map(Enum::ordinal)
                 .collect(Collectors.toList());
     }
 

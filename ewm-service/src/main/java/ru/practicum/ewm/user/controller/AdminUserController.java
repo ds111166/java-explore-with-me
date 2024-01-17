@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.user.dto.NewUserRequest;
-import ru.practicum.ewm.user.dto.UserDto;
+import ru.practicum.ewm.user.dto.UserResponseDto;
 import ru.practicum.ewm.user.service.UserService;
 import ru.practicum.ewm.validation.Marker;
 
@@ -25,13 +25,13 @@ public class AdminUserController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<UserDto> getUsers(
+    public List<UserResponseDto> getUsers(
             @RequestParam(required = false) List<Long> ids,
             @Min(value = 1) @RequestParam(defaultValue = "10", required = false) Integer size,
             @Min(value = 0) @RequestParam(defaultValue = "0", required = false) Integer from
     ) {
         log.info("Получение инф. о пользователях: ids={}, size={}, from={}", ids, size, from);
-        final List<UserDto> users = userService.getUsers(ids, size, from);
+        final List<UserResponseDto> users = userService.getUsers(ids, size, from);
         log.info("Return users = \"{}\"", users);
         return users;
     }
@@ -39,9 +39,9 @@ public class AdminUserController {
     @PostMapping
     @Validated({Marker.OnCreate.class})
     @ResponseStatus(HttpStatus.CREATED)
-    public UserDto createUser(@Valid @RequestBody NewUserRequest newUser) {
+    public UserResponseDto createUser(@Valid @RequestBody NewUserRequest newUser) {
         log.info("Добавление нового пользователя: newUser=\"{}\"", newUser);
-        final UserDto user = userService.createUser(newUser);
+        final UserResponseDto user = userService.createUser(newUser);
         log.info("Добавлен пользователь: \"{}\"", user);
         return user;
     }

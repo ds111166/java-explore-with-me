@@ -21,7 +21,7 @@ public class UpdateEventUserRequest {
     private Boolean paid;               // Нужно ли оплачивать участие в событии
     private Long participantLimit;   // Ограничение на количество участников. 0 - означает отсутствие ограничения
     private Boolean requestModeration;  // Нужна ли пре-модерация заявок на участие
-    private String stateAction;         //Изменение сотояния события: SEND_TO_REVIEW или CANCEL_REVIEW
+    private String stateAction;         //Изменение состояния события: SEND_TO_REVIEW или CANCEL_REVIEW
     @Size(min = 3, max = 120, groups = Marker.OnUpdate.class, message = "invalid field size")
     private String title;               // Заголовок события
 }

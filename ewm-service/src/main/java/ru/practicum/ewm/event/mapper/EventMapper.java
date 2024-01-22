@@ -4,12 +4,12 @@ import org.springframework.stereotype.Component;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.event.data.StateEvent;
-import ru.practicum.ewm.event.dto.EventFullDto;
-import ru.practicum.ewm.event.dto.EventShortDto;
+import ru.practicum.ewm.event.dto.EventGetPublicResponse;
+import ru.practicum.ewm.event.dto.EventResponseDto;
 import ru.practicum.ewm.event.dto.Location;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.model.Event;
-import ru.practicum.ewm.user.dto.UserShortDto;
+import ru.practicum.ewm.user.dto.UserGetPublicResponse;
 import ru.practicum.ewm.user.model.User;
 
 import java.time.LocalDateTime;
@@ -20,8 +20,9 @@ public class EventMapper {
 
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public EventShortDto toEventShortDto(Event event, CategoryDto categoryDto, UserShortDto userShortDto) {
-        return EventShortDto.builder()
+    public EventGetPublicResponse toEventGetPublicResponse(Event event, CategoryDto categoryDto,
+                                                           UserGetPublicResponse userShortDto) {
+        return EventGetPublicResponse.builder()
                 .annotation(event.getAnnotation())
                 .category(categoryDto)
                 .confirmedRequests(event.getConfirmedRequests())
@@ -34,13 +35,8 @@ public class EventMapper {
                 .build();
     }
 
-    public Event toEvent(
-            NewEventDto newEventDto,
-            Category category,
-            User initiator,
-            LocalDateTime createdDate,
-            LocalDateTime publishedDate,
-            StateEvent state) {
+    public Event toEvent(NewEventDto newEventDto, Category category, User initiator, LocalDateTime createdDate,
+                         LocalDateTime publishedDate, StateEvent state) {
         Boolean paid = newEventDto.getPaid() != null && newEventDto.getPaid();
         Boolean isModeration = newEventDto.getRequestModeration() == null || newEventDto.getRequestModeration();
         Long participantLimit = (newEventDto.getParticipantLimit() == null) ? 0 : newEventDto.getParticipantLimit();
@@ -64,8 +60,8 @@ public class EventMapper {
                 .build();
     }
 
-    public EventFullDto toEventFullDto(Event event, CategoryDto categoryDto, UserShortDto userDto) {
-        return EventFullDto.builder()
+    public EventResponseDto toEventResponseDto(Event event, CategoryDto categoryDto, UserGetPublicResponse userDto) {
+        return EventResponseDto.builder()
                 .annotation(event.getAnnotation())
                 .category(categoryDto)
                 .confirmedRequests(event.getConfirmedRequests())

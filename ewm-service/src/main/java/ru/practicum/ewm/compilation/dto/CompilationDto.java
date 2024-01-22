@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import ru.practicum.ewm.event.dto.EventShortDto;
+import ru.practicum.ewm.event.dto.EventGetPublicResponse;
 
 import java.util.Set;
 
@@ -13,7 +13,7 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CompilationDto {
-    private Set<EventShortDto> events;
+    private Set<EventGetPublicResponse> events;
     private Long id;
     private Boolean pinned;
     private String title;

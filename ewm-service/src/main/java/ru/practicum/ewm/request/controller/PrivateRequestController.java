@@ -17,13 +17,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping(path = "/users/{userId}/requests")
 public class PrivateRequestController {
+
     private final RequestService requestService;
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<ParticipationRequestDto> getRequestsByUserId(
-            @PathVariable @NotNull Long userId
-    ) {
+    public List<ParticipationRequestDto> getRequestsByUserId(@PathVariable @NotNull Long userId) {
         log.info("Получение запросов от пользователя userId={}", userId);
         List<ParticipationRequestDto> requests = requestService.getRequestsByRequesterId(userId);
         log.info("Return requests = \"{}\"", requests);

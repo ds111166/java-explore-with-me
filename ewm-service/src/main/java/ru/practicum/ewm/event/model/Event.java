@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 public class Event {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;                        // уникальный идентификатор события
+    private Long id;                        // Уникальный идентификатор события
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;              // Категория события
@@ -42,7 +42,7 @@ public class Event {
     @Column(name = "is_moderation", nullable = false)
     private Boolean requestModeration;      // Нужна ли пре-модерация заявок на участие
     @Column(name = "participant_limit", nullable = false)
-    private Long participantLimit;       // ограничение на кол-во участников. 0 - означает отсутствие ограничения
+    private Long participantLimit;          // Ограничение на кол-во участников. 0 - означает отсутствие ограничения
     @Column(name = "title", nullable = false, length = 120)
     private String title;                   // Заголовок
     @Column(name = "annotation", nullable = false, length = 2000)
@@ -51,7 +51,7 @@ public class Event {
     private String description;             // Полное описание события
     @Column(name = "state_id")
     @Enumerated(EnumType.ORDINAL)
-    private StateEvent state;               // Список состояний жизненного цикла события
+    private StateEvent state;               // Состояние жизненного цикла события
     @Column(name = "confirmed_requests")
     private Long confirmedRequests;         // Количество одобренных заявок на участие в данном событии
     @Column(name = "views")

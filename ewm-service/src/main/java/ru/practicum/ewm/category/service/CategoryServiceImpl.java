@@ -92,7 +92,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private void checkingCategoryName(String categoryName) {
         if (categoryRepository.existsCategoryByName(categoryName)) {
-            throw new ConflictException("Категоия с name='" + categoryName + "' уже существует");
+            throw new ConflictException("Категория с name='" + categoryName + "' уже существует");
         }
     }
 }

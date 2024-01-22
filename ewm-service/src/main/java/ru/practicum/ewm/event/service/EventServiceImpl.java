@@ -51,7 +51,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventFullDto createEvent(Long userId, NewEventDto newEventDto) {
+    public EventResponseDto createEvent(Long userId, NewEventDto newEventDto) {
         User initiator = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User with id=" + userId + " was not found"));
         Long categoryId = newEventDto.getCategory();
@@ -64,9 +64,9 @@ public class EventServiceImpl implements EventService {
                 null, StateEvent.PENDING);
         try {
             final Event createdEvent = eventRepository.save(newEvent);
-            return eventMapper.toEventFullDto(createdEvent,
+            return eventMapper.toEventResponseDto(createdEvent,
                     categoryMapper.toCategoryDto(createdEvent.getCategory()),
-                    userMapper.toUserShorDto(createdEvent.getInitiator())
+                    userMapper.toUserGetPublicResponse(createdEvent.getInitiator())
             );
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());
@@ -75,34 +75,34 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public List<EventFullDto> getEvents(List<Long> users, List<String> states, List<Long> categories,
-                                        String rangeStart, String rangeEnd, Integer size, Integer from) {
-        FindEventsParametrs parametrs = FindEventsParametrs.builder()
+    public List<EventResponseDto> getEvents(List<Long> users, List<String> states, List<Long> categories,
+                                            String rangeStart, String rangeEnd, Integer size, Integer from) {
+        FindEventsParameters parameters = FindEventsParameters.builder()
                 .users(users)
                 .states(new ArrayList<>())
                 .categories(categories)
                 .build();
         if (rangeStart != null && rangeEnd != null) {
-            parametrs.startDate = LocalDateTime.parse(rangeStart, formatter);
-            parametrs.endDate = LocalDateTime.parse(rangeEnd, formatter);
+            parameters.startDate = LocalDateTime.parse(rangeStart, formatter);
+            parameters.endDate = LocalDateTime.parse(rangeEnd, formatter);
         }
         final Sort sorting = Sort.by(Sort.Order.desc("createdOn"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parametrs, pageable);
+        final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parameters, pageable);
         return events.stream()
-                .map(event -> eventMapper.toEventFullDto(
+                .map(event -> eventMapper.toEventResponseDto(
                         event,
                         categoryMapper.toCategoryDto(event.getCategory()),
-                        userMapper.toUserShorDto(event.getInitiator())))
+                        userMapper.toUserGetPublicResponse(event.getInitiator())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public EventFullDto updateEvent(Long eventId, UpdateEventAdminRequest updateEvent) {
+    public EventResponseDto updateEvent(Long eventId, UpdateEventAdminRequest updateEvent) {
         final Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        //дата начала изменяемого события должна быть не ранее чем за час от даты публикации. (Ожидается код ошибки 409)
+        //Дата начала изменяемого события должна быть не ранее чем за час от даты публикации. (Ожидается код ошибки 409)
         LocalDateTime currentDateTime = LocalDateTime.now();
         Long differenceInHours = 1L;
         validateEventDate(event.getEventDate(), currentDateTime, differenceInHours);
@@ -169,20 +169,20 @@ public class EventServiceImpl implements EventService {
 
         final Event savedEvent = eventRepository.save(event);
 
-        return eventMapper.toEventFullDto(
+        return eventMapper.toEventResponseDto(
                 savedEvent,
                 categoryMapper.toCategoryDto(savedEvent.getCategory()),
-                userMapper.toUserShorDto(savedEvent.getInitiator())
+                userMapper.toUserGetPublicResponse(savedEvent.getInitiator())
         );
     }
 
     @Override
     @Transactional
-    public List<EventShortDto> getPublicEvents(HttpServletRequest request, String text, List<Long> categories,
-                                               Boolean paid, String rangeStart, String rangeEnd,
-                                               Boolean onlyAvailable, String sort, Integer size, Integer from) {
+    public List<EventGetPublicResponse> getPublicEvents(HttpServletRequest request, String text, List<Long> categories,
+                                                        Boolean paid, String rangeStart, String rangeEnd,
+                                                        Boolean onlyAvailable, String sort, Integer size, Integer from) {
 
-        final FindEventsParametrs parametrs = FindEventsParametrs.builder()
+        final FindEventsParameters parameters = FindEventsParameters.builder()
                 .states(List.of(StateEvent.PUBLISHED))
                 .categories(categories)
                 .text(text)
@@ -201,8 +201,8 @@ public class EventServiceImpl implements EventService {
                                 " before rangeStart="
                                 + dateTimeStart.format(formatter));
             }
-            parametrs.startDate = dateTimeStart;
-            parametrs.endDate = dateTimeEnd;
+            parameters.startDate = dateTimeStart;
+            parameters.endDate = dateTimeEnd;
         }
 
         final Sort sorting;
@@ -214,36 +214,28 @@ public class EventServiceImpl implements EventService {
             sorting = Sort.by(Sort.Order.desc("createdOn"));
         }
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        final FindEventsParametrs parametrsAllStates = FindEventsParametrs.builder()
-                .states(null)
-                .categories(parametrs.categories)
-                .text(parametrs.text)
-                .paid(parametrs.paid)
-                .onlyAvailable(parametrs.onlyAvailable)
-                .build();
-        final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parametrs, pageable);
-        final Page<Event> eventsAllStates = eventRepositoryCustom.findEventsByParameters(parametrsAllStates, pageable);
+        final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parameters, pageable);
         createHitsEventEndpoint(request);
         return events.stream()
-                .map(event -> eventMapper.toEventShortDto(
+                .map(event -> eventMapper.toEventGetPublicResponse(
                         event,
                         categoryMapper.toCategoryDto(event.getCategory()),
-                        userMapper.toUserShorDto(event.getInitiator())))
+                        userMapper.toUserGetPublicResponse(event.getInitiator())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public EventFullDto getPublicEventById(HttpServletRequest request, Long eventId) {
+    public EventResponseDto getPublicEventById(HttpServletRequest request, Long eventId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         if (event.getState() != StateEvent.PUBLISHED) {
             throw new NotFoundException("Event with id=" + eventId + " was not published");
         }
-        final EventFullDto eventFullDto = eventMapper.toEventFullDto(
+        final EventResponseDto eventFullDto = eventMapper.toEventResponseDto(
                 event,
                 categoryMapper.toCategoryDto(event.getCategory()),
-                userMapper.toUserShorDto(event.getInitiator())
+                userMapper.toUserGetPublicResponse(event.getInitiator())
         );
         createHitsEventEndpoint(request);
         long views = getNumberOfHits(event.getCreatedOn(), LocalDateTime.now(), request);
@@ -255,37 +247,37 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public List<EventShortDto> getEventsOfUser(Long userId, Integer size, Integer from) {
-        final FindEventsParametrs parametrs = FindEventsParametrs.builder()
+    public List<EventGetPublicResponse> getEventsOfUser(Long userId, Integer size, Integer from) {
+        final FindEventsParameters parameters = FindEventsParameters.builder()
                 .users(List.of(userId))
                 .build();
         final Sort sorting = Sort.by(Sort.Order.desc("createdOn"));
         final Pageable pageable = PageRequest.of(from / size, size, sorting);
-        final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parametrs, pageable);
+        final Page<Event> events = eventRepositoryCustom.findEventsByParameters(parameters, pageable);
         return events.stream()
-                .map(event -> eventMapper.toEventShortDto(
+                .map(event -> eventMapper.toEventGetPublicResponse(
                         event,
                         categoryMapper.toCategoryDto(event.getCategory()),
-                        userMapper.toUserShorDto(event.getInitiator())))
+                        userMapper.toUserGetPublicResponse(event.getInitiator())))
                 .collect(Collectors.toList());
     }
 
 
     @Override
     @Transactional
-    public EventFullDto getEventOfCurrentUserByEventId(Long userId, Long eventId) {
+    public EventResponseDto getEventOfCurrentUserByEventId(Long userId, Long eventId) {
         final Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
-        return eventMapper.toEventFullDto(
+        return eventMapper.toEventResponseDto(
                 event,
                 categoryMapper.toCategoryDto(event.getCategory()),
-                userMapper.toUserShorDto(event.getInitiator())
+                userMapper.toUserGetPublicResponse(event.getInitiator())
         );
     }
 
     @Override
     @Transactional
-    public EventFullDto updateEventOfUser(Long userId, Long eventId, UpdateEventUserRequest updateEvent) {
+    public EventResponseDto updateEventOfUser(Long userId, Long eventId, UpdateEventUserRequest updateEvent) {
         final Event event = eventRepository.findByIdAndInitiatorId(eventId, userId)
                 .orElseThrow(() -> new NotFoundException("Event with id=" + eventId + " was not found"));
         if (event.getState() == StateEvent.PUBLISHED) {
@@ -343,10 +335,10 @@ public class EventServiceImpl implements EventService {
         }
         final Event savedEvent = eventRepository.save(event);
 
-        return eventMapper.toEventFullDto(
+        return eventMapper.toEventResponseDto(
                 savedEvent,
                 categoryMapper.toCategoryDto(savedEvent.getCategory()),
-                userMapper.toUserShorDto(savedEvent.getInitiator())
+                userMapper.toUserGetPublicResponse(savedEvent.getInitiator())
         );
     }
 

@@ -2,34 +2,25 @@ package ru.practicum.ewm.user.mapper;
 
 import org.springframework.stereotype.Component;
 import ru.practicum.ewm.user.dto.NewUserRequest;
-import ru.practicum.ewm.user.dto.UserDto;
-import ru.practicum.ewm.user.dto.UserShortDto;
+import ru.practicum.ewm.user.dto.UserGetPublicResponse;
+import ru.practicum.ewm.user.dto.UserResponseDto;
 import ru.practicum.ewm.user.model.User;
 
 @Component
 public class UserMapper {
-    public UserDto toUserDto(User user) {
+    public UserResponseDto toUserResponseDto(User user) {
 
-        return UserDto.builder()
+        return UserResponseDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .build();
     }
 
-    public UserShortDto toUserShorDto(User user) {
-        return UserShortDto.builder()
+    public UserGetPublicResponse toUserGetPublicResponse(User user) {
+        return UserGetPublicResponse.builder()
                 .id(user.getId())
                 .name(user.getName())
-                .build();
-    }
-
-    public User toUser(UserDto userDto) {
-
-        return User.builder()
-                .id(userDto.getId())
-                .name(userDto.getName())
-                .email(userDto.getEmail())
                 .build();
     }
 

@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.ewm.event.dto.EventFullDto;
+import ru.practicum.ewm.event.dto.EventResponseDto;
 import ru.practicum.ewm.event.dto.UpdateEventAdminRequest;
 import ru.practicum.ewm.event.service.EventService;
 import ru.practicum.ewm.validation.Marker;
@@ -26,7 +26,7 @@ public class AdminEventController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<EventFullDto> getEvents(
+    public List<EventResponseDto> getEvents(
             @RequestParam(required = false) List<Long> users,
             @RequestParam(required = false) List<String> states,
             @RequestParam(required = false) List<Long> categories,
@@ -37,21 +37,9 @@ public class AdminEventController {
     ) {
         log.info("Получение событий: users={}, states={}, categories={}," +
                         " rangeStart={}, rangeEnd={}. size={}, from={}",
-                users,
-                states,
-                categories,
-                rangeStart,
-                rangeEnd,
-                size,
-                from);
-        final List<EventFullDto> events = eventService.getEvents(
-                users,
-                states,
-                categories,
-                rangeStart,
-                rangeEnd,
-                size,
-                from);
+                users, states, categories, rangeStart, rangeEnd, size, from);
+        final List<EventResponseDto> events = eventService.getEvents(users, states,
+                categories, rangeStart, rangeEnd, size, from);
         log.info("Return events = \"{}\"", events);
         return events;
     }
@@ -59,12 +47,12 @@ public class AdminEventController {
     @PatchMapping("/{eventId}")
     @Validated({Marker.OnUpdate.class})
     @ResponseStatus(HttpStatus.OK)
-    public EventFullDto updateEvent(
+    public EventResponseDto updateEvent(
             @PathVariable @NotNull Long eventId,
             @Valid @RequestBody @NotNull UpdateEventAdminRequest updateEventRequest
     ) {
         log.info("Обновление события: eventId={}, updateEventRequest={}", eventId, updateEventRequest);
-        EventFullDto updatedEvent = eventService.updateEvent(eventId, updateEventRequest);
+        EventResponseDto updatedEvent = eventService.updateEvent(eventId, updateEventRequest);
         log.info("Обновлено событие: \"{}\"", updatedEvent);
         return updatedEvent;
     }

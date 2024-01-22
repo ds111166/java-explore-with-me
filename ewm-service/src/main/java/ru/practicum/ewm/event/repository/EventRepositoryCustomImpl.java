@@ -6,7 +6,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
-import ru.practicum.ewm.event.dto.FindEventsParametrs;
+import ru.practicum.ewm.event.dto.FindEventsParameters;
 import ru.practicum.ewm.event.model.Event;
 
 import javax.persistence.EntityManager;
@@ -25,7 +25,7 @@ public class EventRepositoryCustomImpl implements EventRepositoryCustom {
     private final EntityManager entityManager;
 
     @Override
-    public Page<Event> findEventsByParameters(FindEventsParametrs parameters, Pageable pageable) {
+    public Page<Event> findEventsByParameters(FindEventsParameters parameters, Pageable pageable) {
 
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Event> query = builder.createQuery(Event.class);

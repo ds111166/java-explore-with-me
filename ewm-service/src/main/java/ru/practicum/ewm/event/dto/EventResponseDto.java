@@ -4,12 +4,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import ru.practicum.ewm.category.dto.CategoryDto;
-import ru.practicum.ewm.user.dto.UserShortDto;
+import ru.practicum.ewm.user.dto.UserGetPublicResponse;
 
 @Data
 @Builder
 @AllArgsConstructor
-public class EventFullDto {
+public class EventResponseDto {
     private String annotation;
     private CategoryDto category;
     private Long confirmedRequests;
@@ -17,7 +17,7 @@ public class EventFullDto {
     private String description;
     private String eventDate;
     private Long id;
-    private UserShortDto initiator;
+    private UserGetPublicResponse initiator;
     private Location location;
     private Boolean paid;
     private Long participantLimit;

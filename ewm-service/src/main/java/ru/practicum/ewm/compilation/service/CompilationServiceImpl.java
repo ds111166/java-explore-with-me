@@ -15,7 +15,7 @@ import ru.practicum.ewm.compilation.dto.UpdateCompilationDto;
 import ru.practicum.ewm.compilation.mapper.CompilationMapper;
 import ru.practicum.ewm.compilation.model.Compilation;
 import ru.practicum.ewm.compilation.repository.CompilationRepository;
-import ru.practicum.ewm.event.dto.EventShortDto;
+import ru.practicum.ewm.event.dto.EventGetPublicResponse;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
@@ -49,7 +49,7 @@ public class CompilationServiceImpl implements CompilationService {
         final Compilation createdCompilation = compilationRepository.saveAndFlush(compilation);
         return compilationMapper.toCompilationDto(
                 createdCompilation,
-                makeEventShortDtos(createdCompilation.getEvents())
+                makeEventGetPublicResponses(createdCompilation.getEvents())
         );
     }
 
@@ -86,7 +86,7 @@ public class CompilationServiceImpl implements CompilationService {
             final Compilation updatedCompilation = compilationRepository.saveAndFlush(updateCompilation);
             return compilationMapper.toCompilationDto(
                     updatedCompilation,
-                    makeEventShortDtos(updatedCompilation.getEvents())
+                    makeEventGetPublicResponses(updatedCompilation.getEvents())
             );
         } catch (DataIntegrityViolationException ex) {
             throw new ConflictException(ex.getMessage());
@@ -105,7 +105,7 @@ public class CompilationServiceImpl implements CompilationService {
         return compilations.stream()
                 .map(compilation -> compilationMapper.toCompilationDto(
                         compilation,
-                        makeEventShortDtos(compilation.getEvents())
+                        makeEventGetPublicResponses(compilation.getEvents())
                 ))
                 .collect(Collectors.toList());
     }
@@ -116,16 +116,16 @@ public class CompilationServiceImpl implements CompilationService {
 
         Compilation compilation = compilationRepository.findById(compId)
                 .orElseThrow(() -> new NotFoundException("Compilation with id=" + compId + " was not found"));
-        return compilationMapper.toCompilationDto(compilation, makeEventShortDtos(compilation.getEvents()));
+        return compilationMapper.toCompilationDto(compilation, makeEventGetPublicResponses(compilation.getEvents()));
     }
 
-    private Set<EventShortDto> makeEventShortDtos(Set<Event> events) {
+    private Set<EventGetPublicResponse> makeEventGetPublicResponses(Set<Event> events) {
 
         return events.stream()
-                .map(event -> eventMapper.toEventShortDto(
+                .map(event -> eventMapper.toEventGetPublicResponse(
                         event,
                         categoryMapper.toCategoryDto(event.getCategory()),
-                        userMapper.toUserShorDto(event.getInitiator()))
+                        userMapper.toUserGetPublicResponse(event.getInitiator()))
                 )
                 .collect(Collectors.toSet());
     }
